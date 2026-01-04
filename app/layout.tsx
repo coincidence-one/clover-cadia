@@ -10,8 +10,8 @@ const pressStart2P = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  title: "Lucky Clover Slots - Pixel Edition",
-  description: "Retro 8-bit slot machine game with Next.js and 8bitcn UI",
+  title: "CloverCadia - 8-Bit Slots Arcade",
+  description: "Web-based Retro Slot Machine Arcade",
 };
 
 export default function RootLayout({
