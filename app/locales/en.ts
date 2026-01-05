@@ -55,6 +55,20 @@ export interface Translations {
   activeLabel: string;
   consumableLabel: string;
 
+  // Items
+  luckyBell: string;
+  ticketDoubler: string;
+  coinMagnet: string;
+  shield: string;
+  luckyCharm: string;
+  wildCard: string;
+  scatterBoost: string;
+  sevenHunter: string;
+  crystalBall: string;
+  instantJackpot: string;
+  rerollSpin: string;
+  curseAbsorb: string;
+
   // Paytable
   paytableTitle: string;
   symbols: string;
@@ -86,6 +100,20 @@ export interface Translations {
   // Phone Bonus
   incomingCall: string;
   pickBonus: string;
+
+  // Guide
+  guideTitle: string;
+  guidePage1Title: string;
+  guidePage1Desc: string;
+  guidePage2Title: string;
+  guidePage2Desc: string;
+  guidePage3Title: string;
+  guidePage3Desc: string;
+  guidePage4Title: string;
+  guidePage4Desc: string;
+  next: string;
+  prev: string;
+  close: string;
 
   // Items
   items: {
@@ -126,8 +154,8 @@ export interface Translations {
 
 export const en: Translations = {
   // Header & Titles
-  title: 'LUCKY CLOVER',
-  subtitle: '★ PIXEL SLOTS ★',
+  title: 'PIXEL BET',
+  subtitle: '★ ROGUELITE SLOTS ★',
   jackpot: '◆ JACKPOT ◆',
 
   // Controls
@@ -152,6 +180,18 @@ export const en: Translations = {
   passiveLabel: 'PASSIVE (PERM)',
   activeLabel: 'ACTIVE',
   consumableLabel: 'CONSUMABLE',
+  luckyBell: 'LUCKY BELL',
+  ticketDoubler: 'TICKET DOUBLER',
+  coinMagnet: 'COIN MAGNET',
+  shield: 'HOLY SHIELD',
+  luckyCharm: 'LUCKY CHARM',
+  wildCard: 'WILD CARD',
+  scatterBoost: 'SCATTER BOOST',
+  sevenHunter: 'SEVEN HUNTER',
+  crystalBall: 'CRYSTAL BALL',
+  instantJackpot: 'MINI JACKPOT',
+  rerollSpin: 'REROLL',
+  curseAbsorb: 'CURSE ABSORB',
 
   // Paytable
   paytableTitle: 'PAYTABLE',
@@ -169,6 +209,20 @@ export const en: Translations = {
   match4: '4 MATCH',
   match5: '5 MATCH',
   paytableNote: '* Probabilities vary with items & phone bonuses',
+
+  // Guide
+  guideTitle: 'GAME GUIDE',
+  guidePage1Title: 'SURVIVAL RULE',
+  guidePage1Desc: 'Reach the GOAL before Spins run out.\nIf Spins=0 and Coins < Goal, GAME OVER!',
+  guidePage2Title: 'STRATEGY SETUP',
+  guidePage2Desc: 'Choose 3 SPINS (Risky, +2 Tickets) or 7 SPINS (Safe, +1 Ticket).',
+  guidePage3Title: 'BEWARE 666',
+  guidePage3Desc: 'The 666 Pattern wipes ALL coins.\nBuy a SHIELD to protect yourself.',
+  guidePage4Title: 'ITEM SHOP',
+  guidePage4Desc: 'Use Tickets to buy upgrades.\nItems are essential for survival.',
+  next: 'NEXT',
+  prev: 'PREV',
+  close: 'CLOSE',
 
   // Round System
   round: 'ROUND',

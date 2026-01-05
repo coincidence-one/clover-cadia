@@ -60,7 +60,7 @@ export const INITIAL_GAME_STATE: GameState = {
 };
 
 // Storage key
-export const STORAGE_KEY = 'cloverCadiaState';
+export const STORAGE_KEY = 'pixelBetState';
 
 // Spin Cost (Fixed)
 export const SPIN_COST = 8;

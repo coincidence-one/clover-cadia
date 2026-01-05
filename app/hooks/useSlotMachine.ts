@@ -151,8 +151,10 @@ export function useSlotMachine() {
     // Real check happens at end of spin.
 
     // Generate new grid
-    // Check for probability buffs from phone bonuses
-    const boostClover = state.activeEffects.luckyCharm > 0;
+    // Check for probability buffs from phone bonuses OR active ticket items
+
+    // Lucky Charm (Active Ticket Item) boosts Clover/Rare
+    const boostClover = (state.activeTicketEffects['luckyCharm'] || 0) > 0;
 
     // Custom weighted random wrapper for bonuses
     const getSymbolWithBonuses = () => {
@@ -181,10 +183,14 @@ export function useSlotMachine() {
       getSymbolWithBonuses().icon
     );
 
-    // Apply wild card effect
-    if (state.activeEffects.wildCard) {
+    // Apply wild card effect (Consumable trigger)
+    // We check if wildCard active effect is > 0 (set by useTicketItem)
+    if ((state.activeTicketEffects['wildCard'] || 0) > 0) {
       newGrid = addWildToGrid(newGrid);
-      updateState({ activeEffects: { ...state.activeEffects, wildCard: false } });
+      // Consume the effect
+      const newActive = { ...state.activeTicketEffects };
+      delete newActive['wildCard'];
+      updateState({ activeEffects: { ...state.activeEffects, wildCard: false }, activeTicketEffects: newActive });
     }
 
     // Animate spinning
@@ -197,11 +203,12 @@ export function useSlotMachine() {
 
     // Check for 666 curse
     if (hasCurse(newGrid)) {
-      if (state.activeEffects.shield) {
-        // Shield blocks curse
+      // Check for Shield (in Ticket Items inventory)
+      if ((state.ticketItems['shield'] || 0) > 0) {
+        // Shield blocks curse (Consume 1 shield)
         playSound('win');
         setMessage('✝️ SHIELD BLOCKED 666!');
-        updateState({ activeEffects: { ...state.activeEffects, shield: false } });
+        updateState({ ticketItems: { ...state.ticketItems, shield: state.ticketItems['shield'] - 1 } });
         unlockAchievement('survivor');
       } else {
         // Curse triggers
@@ -282,9 +289,23 @@ export function useSlotMachine() {
       totalWins: newTotalWins,
     });
 
-    // Decrease lucky charm counter
-    if (state.activeEffects.luckyCharm > 0) {
-      updateState({ activeEffects: { ...state.activeEffects, luckyCharm: state.activeEffects.luckyCharm - 1 } });
+    // Decrease active ticket item durations (counters)
+    const nextActiveEffects = { ...state.activeTicketEffects };
+    let effectsChanged = false;
+
+    Object.keys(nextActiveEffects).forEach(key => {
+      if (nextActiveEffects[key] > 0) {
+        nextActiveEffects[key]--;
+        effectsChanged = true;
+        if (nextActiveEffects[key] <= 0) delete nextActiveEffects[key];
+      }
+    });
+
+    if (effectsChanged) {
+      // We need to merge this update with previous updateState or call it again.
+      // Since stateRef is used constraints, we can chain or include in next render.
+      // But `updateState` merges.
+      updateState({ activeTicketEffects: nextActiveEffects });
     }
 
     // Set message and play sound
@@ -411,6 +432,14 @@ export function useSlotMachine() {
         case 'rerollSpin':
           updateState({ ticketItems: newTicketItems });
           setToast('🔄 REROLL READY!');
+          break;
+        case 'wildCard':
+          // Wild Card: Activates for Next Spin (Duration 1)
+          updateState({
+            ticketItems: newTicketItems,
+            activeTicketEffects: { ...state.activeTicketEffects, wildCard: 1 }
+          });
+          setToast('🃏 NEXT SPIN WILD!');
           break;
         default:
           updateState({ ticketItems: newTicketItems });

@@ -2,8 +2,8 @@ import { Translations } from './en';
 
 export const ko: Translations = {
   // Header & Titles
-  title: '럭키 클로버',
-  subtitle: '★ 픽셀 슬롯 ★',
+  title: '픽셀 벳',
+  subtitle: '★ 로그라이트 슬롯 ★',
   jackpot: '◆ 잭팟 ◆',
 
   // Controls
@@ -37,7 +37,21 @@ export const ko: Translations = {
   match3: '3개 일치',
   match4: '4개 일치',
   match5: '5개 일치',
-  paytableNote: '* 확률은 아이템 및 전화 보너스에 따라 변동됩니다',
+  paytableNote: '* 심볼 희귀도에 따라 등장 확률이 다릅니다.',
+
+  // Guide
+  guideTitle: '게임 가이드',
+  guidePage1Title: '생존 규칙',
+  guidePage1Desc: '스핀이 0이 되기 전에 목표 금액을 달성하세요.\n목표 미달 시 게임 오버!',
+  guidePage2Title: '전략 선택',
+  guidePage2Desc: '매 라운드 3회(위험, 티켓2장) 또는 7회(안전, 티켓1장) 스핀을 선택하세요.',
+  guidePage3Title: '666 저주',
+  guidePage3Desc: '666 패턴은 모든 코인을 소멸시킵니다.\n방패(Shield)를 구매하여 방어하세요.',
+  guidePage4Title: '아이템 상점',
+  guidePage4Desc: '티켓으로 아이템을 구매하세요.\n생존을 위한 필수 요소입니다.',
+  next: '다음',
+  prev: '이전',
+  close: '닫기',
 
   // Achievements
   trophies: '업적',
@@ -72,6 +86,18 @@ export const ko: Translations = {
   tickets: '티켓',
   passiveLabel: '패시브 (영구)',
   activeLabel: '액티브',
+  luckyBell: '행운의 종',
+  ticketDoubler: '티켓 두배',
+  coinMagnet: '코인 자석',
+  shield: '성스러운 방패',
+  luckyCharm: '행운 부적',
+  wildCard: '와일드 카드',
+  scatterBoost: '스캐터 부스트',
+  sevenHunter: '세븐 헌터',
+  crystalBall: '수정을 구',
+  instantJackpot: '미니 잭팟',
+  rerollSpin: '리롤',
+  curseAbsorb: '저주 흡수',
   consumableLabel: '소모품 (1회성)',
 
   // Round System

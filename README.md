@@ -1,5 +1,6 @@
-# 🎰 CloverCadia v2.0
-> **Retro Pixel Slot Machine with Roguelite Elements**  
+# 🎰 PIXEL BET
+
+> **A Retro Roguelite Slot Survival Game**h Roguelite Elements**  
 > *Spin, Survive, and Beat the Deadline!*
 
 ![Banner Placeholder](https://via.placeholder.com/800x400.png?text=CloverCadia+v2.0)

@@ -15,11 +15,29 @@ import { PhoneCallModal } from '@/app/components/slot-machine/PhoneCallModal';
 import { GameModals } from '@/app/components/slot-machine/GameModals';
 import { SymbolsPanel, PatternsPanel, PaytableModal } from '@/app/components/slot-machine/Paytable';
 import { RoundDifficultySelector } from '@/app/components/slot-machine/RoundDifficultySelector';
+import { GameGuideModal } from '@/app/components/slot-machine/GameGuideModal';
 
 export default function SlotMachine() {
   const { state, isSpinning, message, grid, winningCells, showLevelUp, setShowLevelUp, showDailyBonus, setShowDailyBonus, showCurse, toast, actions } = useSlotMachine();
-  const { t, toggleLocale } = useLocale();
+  const { t, locale, toggleLocale } = useLocale();
 
+  const [showPaytable, setShowPaytable] = React.useState(false);
+  const [showTicketShop, setShowTicketShop] = React.useState(false);
+  const [showAchievements, setShowAchievements] = React.useState(false);
+  const [showGuide, setShowGuide] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+    // basic audio init handled in hook
+    
+    // Auto-show guide on first load
+    const guideViewed = localStorage.getItem('pixelBet_guideViewed');
+    if (!guideViewed) {
+      setShowGuide(true);
+      localStorage.setItem('pixelBet_guideViewed', 'true');
+    }
+  }, []);
   // Helper for Level Progress
   const currentLevel = LEVELS.find(l => l.level === state.level) || LEVELS[0];
   const nextLevel = LEVELS.find(l => l.level === state.level + 1);
@@ -62,6 +80,16 @@ export default function SlotMachine() {
         
         {/* Buttons Group */}
         <div className="flex gap-1 md:gap-2 shrink-0">
+           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowGuide(true)}
+            className="h-8 w-8 p-0 border-yellow-500/50 bg-yellow-900/20 text-yellow-400 hover:bg-yellow-900/40"
+            title="Guide"
+          >
+            ?
+          </Button>
+
           {/* Paytable Modal (Mobile/Tablet) */}
           <div className="xl:hidden">
             <PaytableModal />
@@ -207,6 +235,8 @@ export default function SlotMachine() {
         onSelect={actions.startRound} 
         roundNumber={state.round === 0 ? 1 : (state.showRoundSelector && state.round > 0 ? state.round + 1 : state.round)} 
       />
+
+      <GameGuideModal open={showGuide} onClose={() => setShowGuide(false)} />
 
       <GameModals 
          state={state} 

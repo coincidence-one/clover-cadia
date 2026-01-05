@@ -21,19 +21,21 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   // Load saved locale from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('cloverCadiaLocale') as Locale;
+    // Load from storage
+    const saved = localStorage.getItem('pixelBetLocale') as Locale;
     if (saved && (saved === 'en' || saved === 'ko')) {
-      setLocaleState(saved);
+      setLocale(saved);
     }
   }, []);
 
   const setLocale = (newLocale: Locale) => {
     setLocaleState(newLocale);
-    localStorage.setItem('cloverCadiaLocale', newLocale);
   };
 
   const toggleLocale = () => {
-    setLocale(locale === 'en' ? 'ko' : 'en');
+    const newLocale = locale === 'en' ? 'ko' : 'en';
+    setLocale(newLocale);
+    localStorage.setItem('pixelBetLocale', newLocale);
   };
 
   const value: LocaleContextType = {

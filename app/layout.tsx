@@ -11,8 +11,15 @@ const pressStart2P = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  title: "CloverCadia - 8-Bit Slots Arcade",
-  description: "Web-based Retro Slot Machine Arcade",
+  title: "PIXEL BET (픽셀 벳)",
+  description: "Roguelite Slot Survival / 레트로 로그라이트 슬롯 서바이벌",
+  openGraph: {
+    title: "PIXEL BET (픽셀 벳)",
+    description: "Spin, Survive, Win! / 스핀, 생존, 그리고 승리!",
+    locale: "en_US",
+    alternateLocale: ["ko_KR"],
+    type: "website",
+  },
 };
 
 export default function RootLayout({
