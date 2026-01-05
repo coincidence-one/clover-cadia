@@ -22,6 +22,8 @@ import {
   getRoundConfig,
   ROUNDS,
   MAX_ROUND,
+  generatePhoneChoices,
+  PHONE_BONUSES,
 } from '@/app/constants';
 
 // Utils
@@ -128,8 +130,34 @@ export function useSlotMachine() {
     // Real check happens at end of spin.
 
     // Generate new grid
+    // Check for probability buffs from phone bonuses
+    const boostClover = state.activeEffects.luckyCharm > 0;
+
+    // Custom weighted random wrapper for bonuses
+    const getSymbolWithBonuses = () => {
+      const symbol = getWeightedRandomSymbol(boostClover);
+      // Apply permanent probability buffs (Phone Bonuses)
+      // This is a simplified implementation - in reality we should adjust weights
+      // Here we just re-roll if we hit a buffed symbol's target
+
+      // Example: Buff Cherry -> If !Cherry, 2% chance to force Cherry
+      if (state.activeBonuses.includes('buff_cherry_up') && symbol.id !== 'cherry' && Math.random() < 0.02) return SYMBOLS.find(s => s.id === 'cherry')!;
+      if (state.activeBonuses.includes('buff_lemon_up') && symbol.id !== 'lemon' && Math.random() < 0.02) return SYMBOLS.find(s => s.id === 'lemon')!;
+      if (state.activeBonuses.includes('buff_clover_up') && symbol.id !== 'clover' && Math.random() < 0.02) return SYMBOLS.find(s => s.id === 'clover')!;
+      if (state.activeBonuses.includes('buff_bell_up') && symbol.id !== 'bell' && Math.random() < 0.02) return SYMBOLS.find(s => s.id === 'bell')!;
+      if (state.activeBonuses.includes('buff_seven_up') && symbol.id !== 'seven' && Math.random() < 0.01) return SYMBOLS.find(s => s.id === 'seven')!;
+
+      // Risk: Devil Deal (666 up, 777 up)
+      if (state.activeBonuses.includes('risk_cursed_luck')) {
+        if (symbol.id !== 'six' && Math.random() < 0.01) return SYMBOLS.find(s => s.id === 'six')!;
+        if (symbol.id !== 'seven' && Math.random() < 0.02) return SYMBOLS.find(s => s.id === 'seven')!;
+      }
+
+      return symbol;
+    };
+
     let newGrid = Array(15).fill('').map(() =>
-      getWeightedRandomSymbol(state.activeEffects.luckyCharm > 0).icon
+      getSymbolWithBonuses().icon
     );
 
     // Apply wild card effect
@@ -179,7 +207,13 @@ export function useSlotMachine() {
           // Win = symbol value × (matches - 2) multiplier
           // 3 matches = 1x, 4 matches = 2x, 5 matches = 3x
           const matchMultiplier = win.matches - 2;
-          const lineWin = symbol.value * matchMultiplier * 10; // Base 10x for visibility
+          let lineWin = symbol.value * matchMultiplier * 10; // Base 10x for visibility
+
+          // Apply Glass Cannon Risk (All wins x1.5)
+          if (state.activeBonuses.includes('risk_glass_cannon')) {
+            lineWin = Math.floor(lineWin * 1.5);
+          }
+
           totalWin += lineWin;
           allWinningCells.push(...win.cells);
         }
@@ -395,32 +429,75 @@ export function useSlotMachine() {
   const nextRound = () => {
     if (state.credits < state.currentGoal) return;
 
+    // Instead of advancing immediately, Trigger Phone Call
+    // Check if curse triggered this round? (Simplification: just random/luck based for now in generation)
+    const choices = generatePhoneChoices(state.round, false);
+
+    updateState({
+      showPhoneModal: true,
+      currentPhoneChoices: choices
+    });
+
+    playSound('jackpot'); // Ring ring sound placeholder
+  };
+
+  const selectPhoneBonus = (bonusId: string) => {
+    const bonus = PHONE_BONUSES.find(b => b.id === bonusId);
+    if (!bonus) return;
+
     const nextRoundNum = state.round + 1;
     const config = getRoundConfig(nextRoundNum);
 
-    // Calculate deadline bonus
+    // Calculate deadline bonus (ticket logic)
     const usedSpins = state.maxSpins - state.spinsLeft;
     let extraTickets = 0;
     if (usedSpins < state.maxSpins * 0.25) extraTickets = 2;
     else if (usedSpins < state.maxSpins * 0.5) extraTickets = 1;
-
-    // Award tickets (Base + Bonus)
-    // Logic: Current round reward is based on the round we just cleared? 
-    // Or config reward? Let's use current round's reward config.
     const currentConfig = getRoundConfig(state.round);
-    const reward = currentConfig.rewardTickets + extraTickets;
+    const baseTicketReward = currentConfig.rewardTickets + extraTickets;
+
+    // Accumulate Active Bonuses (Avoid duplicates if simple stat buff? Allow stack? Let's allow simple string list for now)
+    // If it's a one-time buff, don't add to activeBonuses list, just apply effect.
+    // If it's a permanent buff/risk, add to list.
+    const newActiveBonuses = [...state.activeBonuses];
+    if (bonus.type !== 'special' && !bonus.id.startsWith('buff_med_coin') && !bonus.id.startsWith('buff_small_coin') && !bonus.id.startsWith('buff_ticket') && !bonus.id.startsWith('buff_spin')) {
+      newActiveBonuses.push(bonus.id);
+    }
+
+    // Apply Immediate Effects
+    let bonusCoins = 0;
+    let bonusTickets = 0;
+    let bonusMaxSpins = 0;
+
+    switch (bonus.id) {
+      case 'buff_small_coin': bonusCoins = 200; break;
+      case 'buff_med_coin': bonusCoins = 500; break;
+      case 'buff_ticket': bonusTickets = 1; break;
+      case 'buff_spin_5': bonusMaxSpins = 5; break;
+      case 'risk_coin_greed':
+        bonusCoins = -Math.floor(state.credits * 0.5);
+        bonusMaxSpins = 10;
+        break;
+      case 'risk_glass_cannon': bonusMaxSpins = -5; break;
+    }
+
+    const finalTickets = state.tickets + baseTicketReward + bonusTickets;
+    const finalMaxSpins = config.maxSpins + bonusMaxSpins;
 
     updateState({
       round: nextRoundNum,
       currentGoal: config.goal,
-      spinsLeft: config.maxSpins,
-      maxSpins: config.maxSpins,
-      tickets: state.tickets + reward,
-      // Optional: Keep bonus spins or reset? Let's keep them.
+      spinsLeft: finalMaxSpins,
+      maxSpins: finalMaxSpins,
+      tickets: finalTickets,
+      credits: state.credits + bonusCoins, // Carry over credits + bonus
+      activeBonuses: newActiveBonuses,
+      showPhoneModal: false,
+      currentPhoneChoices: [],
     });
 
     playSound('levelup');
-    setToast(`ROUND ${nextRoundNum} START! +${reward} TICKETS`);
+    setToast(`ROUND ${nextRoundNum} START! ${bonus.name} APPLIED!`);
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -456,6 +533,7 @@ export function useSlotMachine() {
       claimDaily,
       playSound,
       nextRound,
+      selectPhoneBonus,
       restartGame,
     },
   };

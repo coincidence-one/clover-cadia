@@ -47,6 +47,11 @@ export const INITIAL_GAME_STATE: GameState = {
   spinsLeft: 15,    // ROUNDS[0].maxSpins
   maxSpins: 15,
   gameOver: false,
+
+  // Phone Bonus System
+  activeBonuses: [],
+  showPhoneModal: false,
+  currentPhoneChoices: [],
 };
 
 // Storage key

@@ -96,6 +96,11 @@ export interface GameState {
   spinsLeft: number;
   maxSpins: number;
   gameOver: boolean;
+
+  // Phone Bonus System
+  activeBonuses: string[];
+  showPhoneModal: boolean;
+  currentPhoneChoices: PhoneBonus[];
 }
 
 // ===== ROUND TYPES =====
@@ -104,6 +109,17 @@ export interface RoundConfig {
   goal: number;
   maxSpins: number;
   rewardTickets: number;
+}
+
+// ===== PHONE BONUS TYPES =====
+export type PhoneBonusType = 'buff' | 'risk' | 'special';
+
+export interface PhoneBonus {
+  id: string;
+  name: string;
+  desc: string;
+  type: PhoneBonusType;
+  rarity: number; // 1 (Common) to 3 (Rare)
 }
 
 // ===== PAYLINE TYPE =====
