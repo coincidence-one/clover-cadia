@@ -28,6 +28,8 @@ export const ITEMS: Record<string, { name: string; icon: string; price: number; 
   wildCard: { name: 'WILD CARD', icon: '?', price: 400, desc: 'ADD WILD' },
 };
 
+export const ITEM_KEYS = Object.keys(ITEMS) as Array<keyof typeof ITEMS>;
+
 export const ACHIEVEMENTS = [
   { id: 'firstWin', name: 'FIRST WIN', desc: 'WIN ONCE', reward: 50, icon: '♦' },
   { id: 'lucky7', name: 'LUCKY 777', desc: 'HIT 777', reward: 200, icon: '7' },
