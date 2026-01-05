@@ -22,6 +22,23 @@ export const ko: Translations = {
   // Shop
   itemShop: '아이템 상점',
 
+  // Paytable
+  paytableTitle: '족보',
+  symbols: '심볼 정보',
+  patterns: '당첨 패턴',
+  multiplier: '배수',
+  baseValue: '기본 점수',
+  rarity: '희귀도',
+  common: '흔함',
+  uncommon: '보통',
+  rare: '희귀',
+  legendary: '전설',
+  cursed: '저주',
+  match3: '3개 일치',
+  match4: '4개 일치',
+  match5: '5개 일치',
+  paytableNote: '* 확률은 아이템 및 전화 보너스에 따라 변동됩니다',
+
   // Achievements
   trophies: '업적',
   achievementsTitle: '나의 업적',

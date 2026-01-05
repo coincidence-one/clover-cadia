@@ -55,6 +55,23 @@ export interface Translations {
   activeLabel: string;
   consumableLabel: string;
 
+  // Paytable
+  paytableTitle: string;
+  symbols: string;
+  patterns: string;
+  multiplier: string;
+  baseValue: string;
+  rarity: string;
+  common: string;
+  uncommon: string;
+  rare: string;
+  legendary: string;
+  cursed: string;
+  match3: string;
+  match4: string;
+  match5: string;
+  paytableNote: string;
+
   // Round System
   round: string;
   goal: string;
@@ -134,6 +151,23 @@ export const en: Translations = {
   passiveLabel: 'PASSIVE (PERM)',
   activeLabel: 'ACTIVE',
   consumableLabel: 'CONSUMABLE',
+
+  // Paytable
+  paytableTitle: 'PAYTABLE',
+  symbols: 'SYMBOLS',
+  patterns: 'PATTERNS',
+  multiplier: 'MULTIPLIER',
+  baseValue: 'BASE VALUE',
+  rarity: 'RARITY',
+  common: 'COMMON',
+  uncommon: 'UNCOMMON',
+  rare: 'RARE',
+  legendary: 'LEGENDARY',
+  cursed: 'CURSED',
+  match3: '3 MATCH',
+  match4: '4 MATCH',
+  match5: '5 MATCH',
+  paytableNote: '* Probabilities vary with items & phone bonuses',
 
   // Round System
   round: 'ROUND',

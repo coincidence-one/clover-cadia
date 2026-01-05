@@ -13,6 +13,7 @@ import { RoundInfoBar } from '@/app/components/slot-machine/RoundInfoBar';
 import { TicketShop } from '@/app/components/slot-machine/TicketShop';
 import { PhoneCallModal } from '@/app/components/slot-machine/PhoneCallModal';
 import { GameModals } from '@/app/components/slot-machine/GameModals';
+import { SymbolsPanel, PatternsPanel, PaytableModal } from '@/app/components/slot-machine/Paytable';
 
 export default function SlotMachine() {
   const { state, isSpinning, message, grid, winningCells, showLevelUp, setShowLevelUp, showDailyBonus, setShowDailyBonus, showCurse, toast, actions } = useSlotMachine();
@@ -42,6 +43,14 @@ export default function SlotMachine() {
       {/* Scanlines Overlay */}
       <div className="pointer-events-none fixed inset-0 z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
 
+      {/* Desktop Paytable Layout (Left & Right) */}
+      <div className="hidden xl:block absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-all duration-500 will-change-transform">
+        <SymbolsPanel />
+      </div>
+      <div className="hidden xl:block absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-all duration-500 will-change-transform">
+        <PatternsPanel />
+      </div>
+
       {/* Top Bar - Row 1: Level & Buttons */}
       <div className="w-full max-w-2xl flex justify-between items-center mb-2 gap-2">
         {/* Level Badge */}
@@ -51,12 +60,17 @@ export default function SlotMachine() {
         
         {/* Buttons */}
         <div className="flex gap-2">
+          {/* Paytable Modal (Mobile/Tablet) */}
+          <div className="xl:hidden">
+            <PaytableModal />
+          </div>
+
           {/* Language Toggle */}
           <Button variant="outline" className="h-10 w-14 text-xs px-2" onClick={toggleLocale}>
             {t.language}
           </Button>
 
-          {/* Ticket Shop */}
+          {/* TicketShop ... */}
           <TicketShop 
             state={state} 
             onBuy={actions.buyTicketItem}
