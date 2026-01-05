@@ -232,15 +232,23 @@ export function useSlotMachine() {
   const [state, setState] = useState<GameState>(INITIAL_STATE);
   const [isSpinning, setIsSpinning] = useState(false);
   const [message, setMessage] = useState('PRESS SPIN!');
-  // 5x3 grid (5 columns, 3 rows = 15 cells)
-  const [grid, setGrid] = useState<string[]>(
-    Array(15).fill('').map(() => getWeightedRandomSymbol().icon)
-  );
+  // 5x3 grid - use static initial values to prevent hydration mismatch
+  const [grid, setGrid] = useState<string[]>([
+    '🍒', '🍋', '☘️', '🔔', '💎',
+    '🍋', '☘️', '🔔', '💎', '💰',
+    '☘️', '🔔', '💎', '💰', '7️⃣',
+  ]);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [winningCells, setWinningCells] = useState<number[]>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showDailyBonus, setShowDailyBonus] = useState(false);
   const [showCurse, setShowCurse] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Hydration complete - now safe to use random values
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // Load game
   useEffect(() => {

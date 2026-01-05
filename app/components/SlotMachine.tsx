@@ -36,82 +36,92 @@ export default function SlotMachine() {
       {/* Scanlines Overlay */}
       <div className="pointer-events-none fixed inset-0 z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
 
-      {/* Top Bar */}
-      <div className="w-full max-w-2xl flex justify-between items-center mb-4 gap-2">
-        <Card className="flex-1 flex items-center p-2 h-12 bg-stone-800 border-2 border-white">
-          <Badge variant="default" className="mr-2 bg-purple-600 text-yellow-400">{currentLevel.rank} {t.level}{state.level}</Badge>
-          <div className="flex-1 h-4 bg-black border border-white relative">
-            <div className="h-full bg-purple-600 transition-all" style={{ width: `${xpProgress}%` }} />
-            <span className="absolute inset-0 flex items-center justify-center text-[8px] text-white">
-                {state.xp} / {nextLevel?.xp || 'MAX'} {t.xp}
-            </span>
-          </div>
-        </Card>
+      {/* Top Bar - Row 1: Level & Buttons */}
+      <div className="w-full max-w-2xl flex justify-between items-center mb-2 gap-2">
+        {/* Level Badge */}
+        <Badge variant="default" className="bg-purple-600 text-yellow-400 text-xs px-4 py-2 shrink-0">
+          {currentLevel.rank} {t.level}{state.level}
+        </Badge>
         
-        {/* Language Toggle */}
-        <Button variant="outline" size="icon" className="h-12 w-12 text-xs" onClick={toggleLocale}>
-          {t.language}
-        </Button>
+        {/* Buttons */}
+        <div className="flex gap-2">
+          {/* Language Toggle */}
+          <Button variant="outline" className="h-10 w-14 text-xs px-2" onClick={toggleLocale}>
+            {t.language}
+          </Button>
 
-        {/* Shop Trigger */}
-        <Dialog>
+          {/* Shop Trigger */}
+          <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline" size="icon" className="h-12 w-12 text-xs">{t.shop}</Button>
+              <Button variant="outline" className="h-10 w-16 text-xs px-2">{t.shop}</Button>
             </DialogTrigger>
             <DialogContent className="max-w-md bg-stone-800 border-4 border-white text-white">
-                <DialogHeader>
-                    <DialogTitle className="text-yellow-400 text-center text-xl">{t.itemShop}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="text-center border-2 border-green-500 p-2 text-green-400">
-                        {t.coins}: {state.credits}
-                    </div>
-                    {ITEM_KEYS.map((key) => {
-                        const item = ITEMS[key];
-                        const translation = getItemTranslation(key);
-                        return (
-                            <div key={key} className="flex items-center justify-between bg-black p-2 border border-white">
-                                <div className="text-2xl mr-4">{item.icon}</div>
-                                <div className="flex-1">
-                                    <div className="text-xs text-white">{translation.name}</div>
-                                    <div className="text-[10px] text-cyan-400">{translation.desc}</div>
-                                </div>
-                                <Button size="sm" onClick={() => actions.buyItem(key)} disabled={state.credits < item.price}>
-                                    {item.price}
-                                </Button>
-                            </div>
-                        );
-                    })}
+              <DialogHeader>
+                <DialogTitle className="text-yellow-400 text-center text-xl">{t.itemShop}</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="text-center border-2 border-green-500 p-2 text-green-400">
+                  {t.coins}: {state.credits}
                 </div>
+                {ITEM_KEYS.map((key) => {
+                  const item = ITEMS[key];
+                  const translation = getItemTranslation(key);
+                  return (
+                    <div key={key} className="flex items-center justify-between bg-black p-2 border border-white">
+                      <div className="text-2xl mr-4">{item.icon}</div>
+                      <div className="flex-1">
+                        <div className="text-xs text-white">{translation.name}</div>
+                        <div className="text-[10px] text-cyan-400">{translation.desc}</div>
+                      </div>
+                      <Button size="sm" onClick={() => actions.buyItem(key)} disabled={state.credits < item.price}>
+                        {item.price}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
             </DialogContent>
-        </Dialog>
+          </Dialog>
 
-         {/* Achievements Trigger */}
-        <Dialog>
+          {/* Achievements Trigger */}
+          <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline" size="icon" className="h-12 w-12 text-xs">🏆</Button>
+              <Button variant="outline" className="h-10 w-12 text-xs">🏆</Button>
             </DialogTrigger>
             <DialogContent className="max-w-md bg-stone-800 border-4 border-white text-white h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="text-yellow-400 text-center text-xl">{t.trophies}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-2">
-                     {ACHIEVEMENTS.map(ach => {
-                        const translation = getAchievementTranslation(ach.id);
-                        return (
-                            <div key={ach.id} className={`flex items-center p-2 border-2 ${state.achievements[ach.id] ? 'border-yellow-400 bg-stone-900' : 'border-gray-600 bg-stone-950 opacity-50'}`}>
-                                <div className="text-2xl mr-4">{ach.icon}</div>
-                                <div className="flex-1">
-                                    <div className="text-xs text-white">{translation.name}</div>
-                                    <div className="text-[10px] text-gray-400">{translation.desc}</div>
-                                </div>
-                                <div>{state.achievements[ach.id] ? '✅' : '🔒'}</div>
-                            </div>
-                        );
-                     })}
-                </div>
+              <DialogHeader>
+                <DialogTitle className="text-yellow-400 text-center text-xl">{t.trophies}</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-2">
+                {ACHIEVEMENTS.map(ach => {
+                  const translation = getAchievementTranslation(ach.id);
+                  return (
+                    <div key={ach.id} className={`flex items-center p-2 border-2 ${state.achievements[ach.id] ? 'border-yellow-400 bg-stone-900' : 'border-gray-600 bg-stone-950 opacity-50'}`}>
+                      <div className="text-2xl mr-4">{ach.icon}</div>
+                      <div className="flex-1">
+                        <div className="text-xs text-white">{translation.name}</div>
+                        <div className="text-[10px] text-gray-400">{translation.desc}</div>
+                      </div>
+                      <div>{state.achievements[ach.id] ? '✅' : '🔒'}</div>
+                    </div>
+                  );
+                })}
+              </div>
             </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Top Bar - Row 2: XP Progress Bar */}
+      <div className="w-full max-w-2xl mb-4">
+        <div className="w-full h-7 bg-black border-2 border-white flex items-center justify-center">
+          <span className="text-xs text-white whitespace-nowrap">
+            {state.xp} / {nextLevel?.xp || 'MAX'} {t.xp}
+          </span>
+        </div>
+        <div className="w-full h-2 bg-black border-x-2 border-b-2 border-white">
+          <div className="h-full bg-purple-600 transition-all" style={{ width: `${xpProgress}%` }} />
+        </div>
       </div>
 
       {/* Header */}
@@ -210,22 +220,22 @@ export default function SlotMachine() {
       {/* Controls */}
       <div className="w-full max-w-2xl">
          <div className="flex gap-2 mb-2">
-            <div className="flex-1 bg-black border-2 border-white p-1 text-center">
-                <div className="text-[8px] text-cyan-400">{t.coins}</div>
-                <div className={`${state.credits === 0 ? 'text-red-400' : 'text-green-400'}`}>{state.credits}</div>
+            <div className="flex-1 bg-black border-2 border-white p-2 text-center">
+                <div className="text-[10px] text-cyan-400">{t.coins}</div>
+                <div className={`text-sm ${state.credits === 0 ? 'text-red-400' : 'text-green-400'}`}>{state.credits}</div>
             </div>
-            <div className="flex-1 bg-black border-2 border-white p-1 text-center">
-                <div className="text-[8px] text-cyan-400">{t.bet}</div>
-                <div className="text-green-400">{state.bet}</div>
+            <div className="flex-1 bg-black border-2 border-white p-2 text-center">
+                <div className="text-[10px] text-cyan-400">{t.bet}</div>
+                <div className="text-sm text-green-400">{state.bet}</div>
             </div>
-            <div className="flex-1 bg-black border-2 border-white p-1 text-center">
-                <div className="text-[8px] text-cyan-400">{t.win}</div>
-                <div className="text-yellow-400">{state.lastWin}</div>
+            <div className="flex-1 bg-black border-2 border-white p-2 text-center">
+                <div className="text-[10px] text-cyan-400">{t.win}</div>
+                <div className="text-sm text-yellow-400">{state.lastWin}</div>
             </div>
             {state.bonusSpins > 0 && (
-              <div className="flex-1 bg-yellow-900 border-2 border-yellow-400 p-1 text-center animate-pulse">
-                <div className="text-[8px] text-yellow-400">BONUS</div>
-                <div className="text-yellow-400">{state.bonusSpins}</div>
+              <div className="flex-1 bg-yellow-900 border-2 border-yellow-400 p-2 text-center animate-pulse">
+                <div className="text-[10px] text-yellow-400">BONUS</div>
+                <div className="text-sm text-yellow-400">{state.bonusSpins}</div>
               </div>
             )}
          </div>
