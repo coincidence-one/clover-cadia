@@ -51,7 +51,7 @@ export interface Translations {
     luckyCharm: { name: string; desc: string };
     doubleStar: { name: string; desc: string };
     hotStreak: { name: string; desc: string };
-    freezer: { name: string; desc: string };
+    shield: { name: string; desc: string };
     wildCard: { name: string; desc: string };
   };
 
@@ -63,8 +63,8 @@ export interface Translations {
     spin100: { name: string; desc: string };
     spin500: { name: string; desc: string };
     rich: { name: string; desc: string };
-    collector: { name: string; desc: string };
-    wildMaster: { name: string; desc: string };
+    survivor: { name: string; desc: string };
+    cursed: { name: string; desc: string };
   };
 
   // Language
@@ -121,23 +121,23 @@ export const en: Translations = {
 
   // Items
   items: {
-    luckyCharm: { name: 'LUCKY CHARM', desc: '+20% WIN x3' },
+    luckyCharm: { name: 'LUCKY CHARM', desc: '+CLOVER% x3' },
     doubleStar: { name: 'DOUBLE STAR', desc: '2X WIN' },
     hotStreak: { name: 'HOT STREAK', desc: '+5 SPINS' },
-    freezer: { name: 'FREEZER', desc: 'LOCK REEL' },
+    shield: { name: 'HOLY SHIELD', desc: 'BLOCK 666' },
     wildCard: { name: 'WILD CARD', desc: 'ADD WILD' },
   },
 
   // Achievements
   achievements: {
     firstWin: { name: 'FIRST WIN', desc: 'WIN ONCE' },
-    lucky7: { name: 'LUCKY 777', desc: 'HIT 777' },
-    jackpotHunter: { name: 'JACKPOT', desc: 'HIT CLOVER' },
+    lucky7: { name: 'LUCKY SEVEN', desc: 'HIT 7x3' },
+    jackpotHunter: { name: 'JACKPOT', desc: 'HIT 7x5' },
     spin100: { name: '100 SPINS', desc: 'SPIN 100X' },
     spin500: { name: '500 SPINS', desc: 'SPIN 500X' },
     rich: { name: 'HIGH ROLLER', desc: '10000 COINS' },
-    collector: { name: 'COLLECTOR', desc: 'ALL ITEMS' },
-    wildMaster: { name: 'WILD MASTER', desc: 'WIN W/ WILD' },
+    survivor: { name: 'SURVIVOR', desc: 'SURVIVE 666' },
+    cursed: { name: 'CURSED', desc: 'HIT 666' },
   },
 
   // Language

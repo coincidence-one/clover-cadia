@@ -50,23 +50,23 @@ export const ko: Translations = {
 
   // Items
   items: {
-    luckyCharm: { name: '럭키 참', desc: '+20% 확률 x3회' },
+    luckyCharm: { name: '럭키 참', desc: '+클로버% x3회' },
     doubleStar: { name: '더블 스타', desc: '2배 당첨금' },
     hotStreak: { name: '핫 스트릭', desc: '+5 스핀' },
-    freezer: { name: '프리저', desc: '릴 고정' },
+    shield: { name: '성스러운 방패', desc: '666 방어' },
     wildCard: { name: '와일드 카드', desc: '와일드 추가' },
   },
 
   // Achievements
   achievements: {
     firstWin: { name: '첫 당첨', desc: '1회 당첨' },
-    lucky7: { name: '럭키 777', desc: '777 달성' },
-    jackpotHunter: { name: '잭팟 헌터', desc: '클로버 달성' },
+    lucky7: { name: '럭키 세븐', desc: '7 x3 달성' },
+    jackpotHunter: { name: '잭팟 헌터', desc: '7 x5 달성' },
     spin100: { name: '100 스핀', desc: '100회 스핀' },
     spin500: { name: '500 스핀', desc: '500회 스핀' },
     rich: { name: '큰손', desc: '10000 코인 달성' },
-    collector: { name: '수집가', desc: '모든 아이템 보유' },
-    wildMaster: { name: '와일드 마스터', desc: '와일드로 당첨' },
+    survivor: { name: '생존자', desc: '666 생존' },
+    cursed: { name: '저주받은 자', desc: '666 발동' },
   },
 
   // Language
