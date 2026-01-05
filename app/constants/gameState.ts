@@ -44,3 +44,6 @@ export const INITIAL_GAME_STATE: GameState = {
 
 // Storage key
 export const STORAGE_KEY = 'cloverCadiaState';
+
+// Fixed spin cost (CloverPit style - no betting)
+export const SPIN_COST = 10;

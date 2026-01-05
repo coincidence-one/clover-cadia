@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useSlotMachine, ITEMS, ACHIEVEMENTS, LEVELS, ITEM_KEYS, PAYLINES, TICKET_ITEMS, TICKET_ITEM_KEYS } from '@/app/hooks/useSlotMachine';
+import { useSlotMachine, ITEMS, ACHIEVEMENTS, LEVELS, ITEM_KEYS, PAYLINES, TICKET_ITEMS, TICKET_ITEM_KEYS, SPIN_COST } from '@/app/hooks/useSlotMachine';
 import { useLocale } from '@/app/contexts/LocaleContext';
 import { Button } from '@/components/ui/8bit/button';
 import { Card } from '@/components/ui/8bit/card';
@@ -305,8 +305,8 @@ export default function SlotMachine() {
                 <div className={`text-sm ${state.credits === 0 ? 'text-red-400' : 'text-green-400'}`}>{state.credits}</div>
             </div>
             <div className="flex-1 bg-black border-2 border-white p-2 text-center">
-                <div className="text-[10px] text-cyan-400">{t.bet}</div>
-                <div className="text-sm text-green-400">{state.bet}</div>
+                <div className="text-[10px] text-cyan-400">SPIN COST</div>
+                <div className="text-sm text-green-400">{SPIN_COST}</div>
             </div>
             <div className="flex-1 bg-black border-2 border-white p-2 text-center">
                 <div className="text-[10px] text-cyan-400">{t.win}</div>
@@ -321,18 +321,14 @@ export default function SlotMachine() {
          </div>
 
          <div className="flex gap-4 items-center justify-center">
-             <Button variant="outline" size="icon" onClick={() => actions.changeBet(-10)}>◀</Button>
              <Button 
-                className={`w-32 h-12 text-xl border-4 border-white ${showCurse ? 'bg-red-600 hover:bg-red-500' : 'bg-green-600 hover:bg-green-500'} text-black`}
+                className={`w-40 h-14 text-xl border-4 border-white ${showCurse ? 'bg-red-600 hover:bg-red-500' : 'bg-green-600 hover:bg-green-500'} text-black`}
                 onClick={actions.spin}
                 disabled={isSpinning}
              >
-                {isSpinning ? t.spinning : t.spin}
+                {isSpinning ? t.spinning : `${t.spin} (-${SPIN_COST})`}
              </Button>
-             <Button variant="outline" size="icon" onClick={() => actions.changeBet(10)}>▶</Button>
          </div>
-         
-         <Button variant="secondary" className="w-full mt-2 bg-yellow-600 text-black h-8 text-xs" onClick={() => actions.changeBet(90)}>{t.maxBet}</Button>
       </div>
 
       {/* Modals: Level Up & Daily */}

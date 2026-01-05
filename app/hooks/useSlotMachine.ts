@@ -16,6 +16,7 @@ import {
   DAILY_REWARDS,
   INITIAL_GAME_STATE,
   STORAGE_KEY,
+  SPIN_COST,
   ITEM_KEYS,
   TICKET_ITEM_KEYS,
 } from '@/app/constants';
@@ -31,7 +32,7 @@ import {
 } from '@/app/utils/gameHelpers';
 
 // Re-export constants for component usage
-export { SYMBOLS, PAYLINES, ITEMS, TICKET_ITEMS, ACHIEVEMENTS, LEVELS, ITEM_KEYS, TICKET_ITEM_KEYS };
+export { SYMBOLS, PAYLINES, ITEMS, TICKET_ITEMS, ACHIEVEMENTS, LEVELS, ITEM_KEYS, TICKET_ITEM_KEYS, SPIN_COST };
 
 // ===== HOOK =====
 export function useSlotMachine() {
@@ -96,7 +97,8 @@ export function useSlotMachine() {
   // ===== ACTIONS =====
 
   const spin = async () => {
-    if (isSpinning || state.credits < state.bet) {
+    // Check if can spin (use fixed SPIN_COST)
+    if (isSpinning || state.credits < SPIN_COST) {
       playSound('error');
       return;
     }
@@ -106,10 +108,10 @@ export function useSlotMachine() {
     setMessage('>>> SPINNING <<<');
     playSound('spin');
 
-    // Deduct bet (or use bonus spin)
+    // Deduct spin cost (or use bonus spin)
     const useBonus = state.bonusSpins > 0;
     if (!useBonus) {
-      updateState({ credits: state.credits - state.bet });
+      updateState({ credits: state.credits - SPIN_COST });
     } else {
       updateState({ bonusSpins: state.bonusSpins - 1 });
     }
@@ -154,7 +156,7 @@ export function useSlotMachine() {
       }
     }
 
-    // Calculate wins
+    // Calculate wins - CloverPit style (no bet multiplier)
     let totalWin = 0;
     const allWinningCells: number[] = [];
 
@@ -163,7 +165,10 @@ export function useSlotMachine() {
       if (win) {
         const symbol = SYMBOLS.find(s => s.icon === win.symbol);
         if (symbol && symbol.value > 0) {
-          const lineWin = symbol.value * state.bet * (win.matches - 2);
+          // Win = symbol value × (matches - 2) multiplier
+          // 3 matches = 1x, 4 matches = 2x, 5 matches = 3x
+          const matchMultiplier = win.matches - 2;
+          const lineWin = symbol.value * matchMultiplier * 10; // Base 10x for visibility
           totalWin += lineWin;
           allWinningCells.push(...win.cells);
         }
