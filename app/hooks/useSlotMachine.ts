@@ -48,6 +48,37 @@ export const ITEMS: Record<string, { name: string; icon: string; price: number; 
 
 export const ITEM_KEYS = Object.keys(ITEMS) as Array<keyof typeof ITEMS>;
 
+// Ticket-purchasable items (consumable / active / passive)
+export type TicketItemType = 'consumable' | 'active' | 'passive';
+
+export interface TicketItem {
+  name: string;
+  icon: string;
+  price: number; // in tickets
+  desc: string;
+  type: TicketItemType;
+  duration?: number; // for active items (number of spins)
+}
+
+export const TICKET_ITEMS: Record<string, TicketItem> = {
+  // Passive items (permanent effects)
+  luckyBell: { name: 'LUCKY BELL', icon: '🔔', price: 5, desc: '+2% BELL', type: 'passive' },
+  ticketDoubler: { name: 'TICKET DOUBLER', icon: '🎫', price: 10, desc: '2X TICKETS', type: 'passive' },
+  coinMagnet: { name: 'COIN MAGNET', icon: '🧲', price: 8, desc: '+10% WINS', type: 'passive' },
+
+  // Active items (limited use)
+  scatterBoost: { name: 'SCATTER BOOST', icon: '⚡', price: 3, desc: '2X SCATTER 5 SPINS', type: 'active', duration: 5 },
+  sevenHunter: { name: 'SEVEN HUNTER', icon: '🎯', price: 4, desc: '+5% SEVEN 3 SPINS', type: 'active', duration: 3 },
+  crystalBall: { name: 'CRYSTAL BALL', icon: '🔮', price: 4, desc: 'PREVIEW NEXT', type: 'active', duration: 1 },
+
+  // Consumable items (one-time use)
+  curseAbsorb: { name: 'CURSE ABSORB', icon: '💀', price: 2, desc: '666→+3 TICKETS', type: 'consumable' },
+  instantJackpot: { name: 'MINI JACKPOT', icon: '💎', price: 6, desc: '+500 COINS NOW', type: 'consumable' },
+  rerollSpin: { name: 'REROLL', icon: '🔄', price: 2, desc: 'REROLL LAST', type: 'consumable' },
+};
+
+export const TICKET_ITEM_KEYS = Object.keys(TICKET_ITEMS) as Array<keyof typeof TICKET_ITEMS>;
+
 export const ACHIEVEMENTS = [
   { id: 'firstWin', name: 'FIRST WIN', desc: 'WIN ONCE', reward: 50, icon: '🏆' },
   { id: 'lucky7', name: 'LUCKY SEVEN', desc: 'HIT 7x3', reward: 200, icon: '7️⃣' },
@@ -168,6 +199,8 @@ const audio = new AudioEngine();
 export type ItemsState = { [key: string]: number };
 export type ActiveEffects = { luckyCharm: number; doubleStar: boolean; wildCard: boolean; shield: boolean };
 export type AchievementsState = { [key: string]: boolean };
+export type PassiveEffects = { [key: string]: boolean }; // Permanent ticket item effects
+export type ActiveTicketEffects = { [key: string]: number }; // Remaining spins for active items
 
 export interface GameState {
   credits: number;
@@ -184,7 +217,12 @@ export interface GameState {
   achievements: AchievementsState;
   lastDailyBonus: string | null;
   dailyStreak: number;
-  curseCount: number; // Track 6s for 666
+  curseCount: number;
+  // Ticket system
+  tickets: number;
+  ticketItems: ItemsState; // Owned ticket items (consumables count)
+  passiveEffects: PassiveEffects; // Purchased passive effects
+  activeTicketEffects: ActiveTicketEffects; // Active items with remaining duration
 }
 
 const INITIAL_STATE: GameState = {
@@ -203,6 +241,11 @@ const INITIAL_STATE: GameState = {
   lastDailyBonus: null,
   dailyStreak: 0,
   curseCount: 0,
+  // Ticket system - start with 2 tickets
+  tickets: 2,
+  ticketItems: {},
+  passiveEffects: {},
+  activeTicketEffects: {},
 };
 
 // Helper: Get random symbol based on probability
@@ -566,6 +609,71 @@ export function useSlotMachine() {
     playSound('click');
   };
 
+  // Buy ticket item
+  const buyTicketItem = (itemName: string) => {
+    const item = TICKET_ITEMS[itemName];
+    if (!item || state.tickets < item.price) {
+      playSound('error');
+      return;
+    }
+
+    const newTickets = state.tickets - item.price;
+
+    if (item.type === 'passive') {
+      // Passive items are permanent, just mark as owned
+      const newPassive = { ...state.passiveEffects, [itemName]: true };
+      updateState({ tickets: newTickets, passiveEffects: newPassive });
+      setToast(`${item.icon} ${item.name} ACQUIRED!`);
+    } else {
+      // Consumable and active items are stored in inventory
+      const newTicketItems = { ...state.ticketItems, [itemName]: (state.ticketItems[itemName] || 0) + 1 };
+      updateState({ tickets: newTickets, ticketItems: newTicketItems });
+    }
+
+    playSound('buy');
+    setTimeout(() => setToast(null), 2000);
+  };
+
+  // Use ticket item (consumable or active)
+  const useTicketItem = (itemName: string) => {
+    if (isSpinning) return;
+    const item = TICKET_ITEMS[itemName];
+    if (!item || item.type === 'passive') return; // Passive items are auto-applied
+    if ((state.ticketItems[itemName] || 0) <= 0) return;
+
+    const newTicketItems = { ...state.ticketItems, [itemName]: state.ticketItems[itemName] - 1 };
+
+    if (item.type === 'active' && item.duration) {
+      // Activate for N spins
+      const newActive = { ...state.activeTicketEffects, [itemName]: item.duration };
+      updateState({ ticketItems: newTicketItems, activeTicketEffects: newActive });
+      setToast(`${item.icon} ACTIVE FOR ${item.duration} SPINS!`);
+    } else if (item.type === 'consumable') {
+      // Immediate effect
+      switch (itemName) {
+        case 'instantJackpot':
+          updateState({ ticketItems: newTicketItems, credits: state.credits + 500 });
+          setToast('💎 +500 COINS!');
+          break;
+        case 'curseAbsorb':
+          // This is handled during spin if 666 occurs
+          updateState({ ticketItems: newTicketItems });
+          setToast('💀 CURSE ABSORB READY!');
+          break;
+        case 'rerollSpin':
+          // TODO: Implement reroll logic
+          updateState({ ticketItems: newTicketItems });
+          setToast('🔄 REROLL READY!');
+          break;
+        default:
+          updateState({ ticketItems: newTicketItems });
+      }
+    }
+
+    playSound('buy');
+    setTimeout(() => setToast(null), 2000);
+  };
+
   return {
     state,
     isSpinning,
@@ -583,6 +691,8 @@ export function useSlotMachine() {
       changeBet,
       useItem,
       buyItem,
+      buyTicketItem,
+      useTicketItem,
       claimDaily,
       playSound
     }
