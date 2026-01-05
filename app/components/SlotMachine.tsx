@@ -205,16 +205,70 @@ export default function SlotMachine() {
       </div>
 
       {/* Header */}
-      <div className="text-center mb-4">
-        <h1 className="text-2xl md:text-3xl text-green-400 drop-shadow-[2px_2px_0_#000]">{t.title}</h1>
-        <p className="text-xs text-yellow-400 tracking-widest">{t.subtitle}</p>
+      <div className="text-center mb-6 animate-pulse">
+        <h1 className="text-3xl text-green-400 drop-shadow-[2px_2px_0_#000]">LUCKY CLOVER</h1>
+        <p className="text-xs text-yellow-400 tracking-widest">★ PIXEL SLOTS ★</p>
+      </div>
+
+      {/* Round Info Bar */}
+      <div className="w-full max-w-lg flex gap-2 mb-4">
+        <div className="flex-1 bg-purple-900 border-2 border-purple-400 p-2 text-center">
+            <div className="text-[10px] text-purple-200">ROUND</div>
+            <div className="text-xl text-white">{state.round}</div>
+        </div>
+        <div className={`flex-1 border-2 p-2 text-center ${state.credits >= state.currentGoal ? 'bg-green-900 border-green-400 animate-pulse' : 'bg-black border-white'}`}>
+            <div className="text-[10px] text-gray-400">GOAL</div>
+            <div className={`text-xl ${state.credits >= state.currentGoal ? 'text-green-400' : 'text-white'}`}>
+                {state.currentGoal}
+            </div>
+        </div>
+        <div className={`flex-1 border-2 p-2 text-center ${state.spinsLeft <= 3 ? 'bg-red-900 border-red-500 animate-pulse' : 'bg-black border-white'}`}>
+            <div className="text-[10px] text-gray-400">SPINS LEFT</div>
+            <div className={`text-xl ${state.spinsLeft <= 3 ? 'text-red-500' : 'text-white'}`}>
+                {state.spinsLeft}/{state.maxSpins}
+            </div>
+        </div>
       </div>
 
       {/* Jackpot */}
-      <div className="w-full max-w-2xl bg-black border-4 border-double border-yellow-500 p-2 mb-4 text-center">
-        <div className="text-[10px] text-yellow-500">{t.jackpot}</div>
+      <div className="w-full max-w-lg bg-black border-4 border-double border-yellow-500 p-2 mb-4 text-center">
+        <div className="text-[10px] text-yellow-500">◆ JACKPOT ◆</div>
         <div className="text-2xl text-yellow-400 drop-shadow-md">{state.jackpot}</div>
       </div>
+
+      {/* Round Clear Modal */}
+      <Dialog open={state.credits >= state.currentGoal && !state.gameOver} onOpenChange={() => {}}>
+        <DialogContent className="bg-green-900 border-4 border-green-400 text-center pointer-events-auto">
+          <DialogHeader>
+            <DialogTitle className="text-yellow-400 text-2xl animate-bounce">🎉 ROUND CLEARED! 🎉</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-white">
+             <p className="mb-4">GOAL REACHED!</p>
+             <div className="text-3xl mb-2">🎟️ REWARD READY</div>
+             <p className="text-xs text-green-200">Advance to next round for harder challenge & more tickets!</p>
+          </div>
+          <Button className="w-full bg-yellow-500 text-black text-xl h-12 hover:bg-yellow-400" onClick={actions.nextRound}>
+            NEXT ROUND ➡️
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Game Over Modal */}
+      <Dialog open={state.gameOver} onOpenChange={() => {}}>
+        <DialogContent className="bg-red-950 border-4 border-red-600 text-center pointer-events-auto">
+          <DialogHeader>
+            <DialogTitle className="text-red-500 text-3xl font-bold">☠️ GAME OVER ☠️</DialogTitle>
+          </DialogHeader>
+          <div className="py-6 text-white">
+             <div className="text-6xl mb-4">🪦</div>
+             <p className="text-xl mb-2">OUT OF SPINS!</p>
+             <p className="text-xs text-red-300">Target was {state.currentGoal} coins.</p>
+          </div>
+          <Button className="w-full bg-white text-black text-xl h-12 hover:bg-gray-200" onClick={actions.restartGame}>
+            🔄 RESTART GAME
+          </Button>
+        </DialogContent>
+      </Dialog>
 
       {/* 5x3 Slot Grid (CloverPit Style) */}
       <div className={`relative bg-stone-800 p-3 border-4 border-white mb-4 ${showCurse ? 'border-red-500 shadow-[0_0_30px_rgba(255,0,0,0.5)]' : winningCells.length > 0 ? 'animate-pulse border-yellow-400' : ''}`}>

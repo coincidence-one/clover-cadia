@@ -19,6 +19,9 @@ import {
   SPIN_COST,
   ITEM_KEYS,
   TICKET_ITEM_KEYS,
+  getRoundConfig,
+  ROUNDS,
+  MAX_ROUND,
 } from '@/app/constants';
 
 // Utils
@@ -108,13 +111,21 @@ export function useSlotMachine() {
     setMessage('>>> SPINNING <<<');
     playSound('spin');
 
-    // Deduct spin cost (or use bonus spin)
+    // Deduct spin cost (or use bonus spin) - BUT ALWAYS CONSUME SPINS LEFT (Deadline)
     const useBonus = state.bonusSpins > 0;
+
+    // Decrement spins left
+    const newSpinsLeft = state.spinsLeft - 1;
+
     if (!useBonus) {
-      updateState({ credits: state.credits - SPIN_COST });
+      updateState({ credits: state.credits - SPIN_COST, spinsLeft: newSpinsLeft });
     } else {
-      updateState({ bonusSpins: state.bonusSpins - 1 });
+      updateState({ bonusSpins: state.bonusSpins - 1, spinsLeft: newSpinsLeft });
     }
+
+    // Check Game Over (if 0 spins left and not enough credits)
+    // We check this AFTER win calculation usually, but spinsLeft hits 0 now.
+    // Real check happens at end of spin.
 
     // Generate new grid
     let newGrid = Array(15).fill('').map(() =>
@@ -189,10 +200,25 @@ export function useSlotMachine() {
     setWinningCells([...new Set(allWinningCells)]);
 
     // Update state with results
-    const currentState = stateRef.current;
+    const currentState = stateRef.current; // Ref to get latest state during async
     const newCredits = currentState.credits + totalWin;
     const newTotalSpins = currentState.totalSpins + 1;
     const newTotalWins = totalWin > 0 ? currentState.totalWins + 1 : currentState.totalWins;
+
+    // Check Game Over Condition
+    if (newSpinsLeft <= 0 && newCredits < state.currentGoal) {
+      updateState({
+        credits: newCredits,
+        lastWin: totalWin,
+        totalSpins: newTotalSpins,
+        totalWins: newTotalWins,
+        gameOver: true
+      });
+      playSound('lose');
+      setMessage('☠️ GAME OVER - OUT OF SPINS! ☠️');
+      setIsSpinning(false);
+      return;
+    }
 
     updateState({
       credits: newCredits,
@@ -251,7 +277,14 @@ export function useSlotMachine() {
     switch (itemName) {
       case 'luckyCharm': newEffects.luckyCharm = 3; break;
       case 'doubleStar': newEffects.doubleStar = true; break;
-      case 'hotStreak': newBonus += 5; break;
+      case 'hotStreak':
+        // Hot Streak adds to SPINS LEFT (Deadline extension)
+        updateState({
+          items: newItems,
+          spinsLeft: state.spinsLeft + 5
+        });
+        playSound('buy');
+        return; // Early return because updateState is called
       case 'shield': newEffects.shield = true; break;
       case 'wildCard': newEffects.wildCard = true; break;
     }
@@ -359,6 +392,48 @@ export function useSlotMachine() {
     playSound('click');
   };
 
+  const nextRound = () => {
+    if (state.credits < state.currentGoal) return;
+
+    const nextRoundNum = state.round + 1;
+    const config = getRoundConfig(nextRoundNum);
+
+    // Calculate deadline bonus
+    const usedSpins = state.maxSpins - state.spinsLeft;
+    let extraTickets = 0;
+    if (usedSpins < state.maxSpins * 0.25) extraTickets = 2;
+    else if (usedSpins < state.maxSpins * 0.5) extraTickets = 1;
+
+    // Award tickets (Base + Bonus)
+    // Logic: Current round reward is based on the round we just cleared? 
+    // Or config reward? Let's use current round's reward config.
+    const currentConfig = getRoundConfig(state.round);
+    const reward = currentConfig.rewardTickets + extraTickets;
+
+    updateState({
+      round: nextRoundNum,
+      currentGoal: config.goal,
+      spinsLeft: config.maxSpins,
+      maxSpins: config.maxSpins,
+      tickets: state.tickets + reward,
+      // Optional: Keep bonus spins or reset? Let's keep them.
+    });
+
+    playSound('levelup');
+    setToast(`ROUND ${nextRoundNum} START! +${reward} TICKETS`);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const restartGame = () => {
+    // Reset to initial state but maybe keep achievements?
+    // For now, full reset
+    // We need to reload initial state
+    setState(INITIAL_GAME_STATE);
+    // Clear local storage logic handled by updateState but careful with partials
+    localStorage.removeItem(STORAGE_KEY);
+    window.location.reload(); // Simple reload to ensure clean state
+  };
+
   return {
     state,
     isSpinning,
@@ -380,6 +455,8 @@ export function useSlotMachine() {
       useTicketItem,
       claimDaily,
       playSound,
+      nextRound,
+      restartGame,
     },
   };
 }

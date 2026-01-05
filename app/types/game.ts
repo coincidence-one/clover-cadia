@@ -89,6 +89,21 @@ export interface GameState {
   ticketItems: ItemsState;
   passiveEffects: PassiveEffects;
   activeTicketEffects: ActiveTicketEffects;
+
+  // Deadline System (Round)
+  round: number;
+  currentGoal: number;
+  spinsLeft: number;
+  maxSpins: number;
+  gameOver: boolean;
+}
+
+// ===== ROUND TYPES =====
+export interface RoundConfig {
+  round: number;
+  goal: number;
+  maxSpins: number;
+  rewardTickets: number;
 }
 
 // ===== PAYLINE TYPE =====

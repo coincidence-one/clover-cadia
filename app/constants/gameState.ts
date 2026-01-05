@@ -11,7 +11,7 @@ export const DEFAULT_ACTIVE_EFFECTS: ActiveEffects = {
 // Initial game state
 export const INITIAL_GAME_STATE: GameState = {
   // Currency
-  credits: 1000,
+  credits: 100, // Reduced for Round 1 challenge (Goal: 300)
   bet: 10,
   jackpot: 10000,
   lastWin: 0,
@@ -40,6 +40,13 @@ export const INITIAL_GAME_STATE: GameState = {
   ticketItems: {},
   passiveEffects: {},
   activeTicketEffects: {},
+
+  // Deadline System
+  round: 1,
+  currentGoal: 300, // ROUNDS[0].goal
+  spinsLeft: 15,    // ROUNDS[0].maxSpins
+  maxSpins: 15,
+  gameOver: false,
 };
 
 // Storage key
