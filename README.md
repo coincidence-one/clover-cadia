@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎰 CloverCadia
 
-## Getting Started
+**A retro-style web slot machine game with pixel art aesthetics and chiptune sounds.**
 
-First, run the development server:
+[🇰🇷 한국어](./README.ko.md)
+
+---
+
+## 🎮 Play Now
+
+👉 **[Play CloverCadia](https://clover-cadia.vercel.app)**
+
+---
+
+## ✨ Features
+
+### 🎲 5×3 Slot Grid
+- 15-cell grid with 7 paylines (horizontal + diagonal)
+- Weighted symbol probabilities for balanced gameplay
+
+### 🍀 Symbols & Odds
+| Symbol | Name | Probability | Payout |
+|--------|------|-------------|--------|
+| 🍒🍋 | Cherry / Lemon | 19.4% | 2x |
+| ☘️🔔 | Clover / Bell | 14.9% | 5x |
+| 💎💰 | Diamond / Treasure | 11.9% | 10x |
+| 7️⃣ | Lucky Seven | 7.5% | 25x |
+| 6️⃣ | Curse | 1.5% | ☠️ |
+
+### ☠️ The 666 Curse
+> *When three 6s appear... you lose everything.*
+
+Hit 666 and watch your coins vanish! But don't worry—the **Holy Shield** item can protect you.
+
+### 🛒 Item Shop
+| Item | Effect |
+|------|--------|
+| 🍀 Lucky Charm | +Clover probability for 3 spins |
+| ⭐ Double Star | 2x winnings on next win |
+| 🔥 Hot Streak | +5 bonus spins |
+| ✝️ Holy Shield | Block the 666 curse |
+| 🃏 Wild Card | Add wild symbol to grid |
+
+### 🏆 Achievements
+Unlock 8 achievements including:
+- 🏆 First Win
+- 7️⃣ Lucky Seven (hit 7×3)
+- 💎 Jackpot Hunter (hit 7×5)
+- 😈 Cursed (trigger 666)
+- ✝️ Survivor (block 666 with shield)
+
+### 🌍 Bilingual Support
+Switch between **English** and **Korean** with one click!
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **UI**: 8bitcn/ui + Tailwind CSS
+- **Audio**: Web Audio API (Chiptune engine)
+- **Font**: Press Start 2P
+- **Storage**: localStorage
+- **Deploy**: Vercel
+
+---
+
+## 🚀 Getting Started
 
 ```bash
+# Clone
+git clone https://github.com/coincidence-one/clover-cadia.git
+cd clover-cadia
+
+# Install
+npm install
+
+# Run
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) and spin!
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📜 License
 
-## Learn More
+MIT License © 2024
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+<p align="center">
+  <strong>🎰 Spin the reels. Chase the jackpot. Fear the 666. 🎰</strong>
+</p>
