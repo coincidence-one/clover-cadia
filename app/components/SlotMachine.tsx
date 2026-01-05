@@ -52,22 +52,24 @@ export default function SlotMachine() {
       </div>
 
       {/* Top Bar - Row 1: Level & Buttons */}
-      <div className="w-full max-w-2xl flex justify-between items-center mb-2 gap-2">
-        {/* Level Badge */}
-        <Badge variant="default" className="bg-purple-600 text-yellow-400 text-xs px-4 py-2 shrink-0">
-          {currentLevel.rank} {t.level}{state.level}
+      <div className="w-full max-w-2xl flex justify-between items-center mb-2 gap-1 md:gap-2">
+        {/* Level Badge - Compact on Mobile */}
+        <Badge variant="default" className="bg-purple-600 text-yellow-400 text-[10px] md:text-xs px-2 md:px-4 py-1 md:py-2 shrink-0 truncate max-w-[100px] md:max-w-none">
+          <span className="md:hidden">LV.{state.level}</span>
+          <span className="hidden md:inline">{currentLevel.rank} {t.level}{state.level}</span>
         </Badge>
         
-        {/* Buttons */}
-        <div className="flex gap-2">
+        {/* Buttons Group */}
+        <div className="flex gap-1 md:gap-2 shrink-0">
           {/* Paytable Modal (Mobile/Tablet) */}
           <div className="xl:hidden">
             <PaytableModal />
           </div>
 
           {/* Language Toggle */}
-          <Button variant="outline" className="h-10 w-14 text-xs px-2" onClick={toggleLocale}>
-            {t.language}
+          <Button variant="outline" className="h-8 md:h-10 w-8 md:w-14 text-xs p-0 md:px-2" onClick={toggleLocale}>
+            <span className="md:hidden">{t.language === '한' ? '한' : 'EN'}</span>
+            <span className="hidden md:inline">{t.language}</span>
           </Button>
 
           {/* TicketShop ... */}
@@ -80,7 +82,7 @@ export default function SlotMachine() {
           {/* Achievements Dialog */}
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" className="h-10 w-10 text-xl px-0">🏆</Button>
+              <Button variant="outline" className="h-8 md:h-10 w-8 md:w-10 text-lg md:text-xl px-0">🏆</Button>
             </DialogTrigger>
             <DialogContent className="max-w-md bg-stone-800 border-4 border-yellow-500 text-white h-[80vh] overflow-y-auto">
               <DialogHeader>
@@ -98,54 +100,6 @@ export default function SlotMachine() {
                         <div className="text-[10px] text-stone-400">{achText.desc}</div>
                       </div>
                       {unlocked && <div className="ml-auto text-green-400 text-xs">✓</div>}
-                    </div>
-                  );
-                })}
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Item Shop Dialog */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="h-10 w-10 text-xl px-0">🛒</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md bg-stone-800 border-4 border-green-500 text-white">
-              <DialogHeader>
-                <DialogTitle className="text-green-400 text-center text-xl">{t.shopTitle}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                {ITEM_KEYS.map((key) => {
-                  const item = ITEMS[key];
-                  const itemText = getItemTranslation(key);
-                  return (
-                    <div key={key} className="flex items-center justify-between border-b border-stone-700 pb-2">
-                       <div className="flex items-center">
-                          <div className="text-2xl mr-2">{item.icon}</div>
-                          <div>
-                            <div className="text-xs text-white">{itemText.name}</div>
-                            <div className="text-[10px] text-green-400">{itemText.desc}</div>
-                          </div>
-                       </div>
-                       <div className="flex flex-col items-end gap-1">
-                          <div className="text-[10px] text-stone-400">Owned: {state.items[key]}</div>
-                          <Button 
-                             size="sm" 
-                             className="h-6 text-[10px]"
-                             onClick={() => actions.buyItem(key)}
-                             disabled={state.credits < item.price}
-                          >
-                            Buy {item.price}
-                          </Button>
-                          <Button 
-                             size="sm" 
-                             className="h-6 text-[10px] bg-blue-600 hover:bg-blue-500"
-                             onClick={() => actions.useItem(key)}
-                             disabled={state.items[key] <= 0 || isSpinning}
-                          >
-                            Use
-                          </Button>
-                       </div>
                     </div>
                   );
                 })}
