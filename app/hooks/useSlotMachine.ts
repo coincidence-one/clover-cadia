@@ -1,286 +1,45 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
-// ===== CLOVERPIT STYLE SYMBOLS & PROBABILITIES =====
-// Based on CloverPit: Cherry/Lemon(19.4%), Clover/Bell(14.9%), Diamond/Treasure(11.9%), Seven(7.5%), 6(1.5%)
-export interface Symbol {
-  id: string;
-  icon: string;
-  probability: number;
-  value: number;
-}
+// Types
+import type { GameState } from '@/app/types';
 
-export const SYMBOLS: Symbol[] = [
-  { id: 'cherry', icon: '🍒', probability: 0.194, value: 2 },
-  { id: 'lemon', icon: '🍋', probability: 0.194, value: 2 },
-  { id: 'clover', icon: '☘️', probability: 0.149, value: 5 },
-  { id: 'bell', icon: '🔔', probability: 0.149, value: 5 },
-  { id: 'diamond', icon: '💎', probability: 0.119, value: 10 },
-  { id: 'treasure', icon: '💰', probability: 0.119, value: 10 },
-  { id: 'seven', icon: '7️⃣', probability: 0.075, value: 25 },
-  { id: 'six', icon: '6️⃣', probability: 0.015, value: -1 }, // Curse symbol
-];
+// Constants
+import {
+  SYMBOLS,
+  PAYLINES,
+  ITEMS,
+  TICKET_ITEMS,
+  ACHIEVEMENTS,
+  LEVELS,
+  DAILY_REWARDS,
+  INITIAL_GAME_STATE,
+  STORAGE_KEY,
+  ITEM_KEYS,
+  TICKET_ITEM_KEYS,
+} from '@/app/constants';
 
-export type SymbolId = typeof SYMBOLS[number]['id'];
+// Utils
+import { audioEngine } from '@/app/utils/audio';
+import {
+  getWeightedRandomSymbol,
+  getInitialGrid,
+  addWildToGrid,
+  hasCurse,
+  checkPaylineWin,
+} from '@/app/utils/gameHelpers';
 
-// 5x3 Grid Pattern Lines (CloverPit uses multiple paylines)
-export const PAYLINES = [
-  // Horizontal lines
-  [0, 1, 2, 3, 4],       // Top row
-  [5, 6, 7, 8, 9],       // Middle row
-  [10, 11, 12, 13, 14],  // Bottom row
-  // Diagonal lines (Zig-Zag)
-  [0, 6, 12, 8, 4],      // V shape
-  [10, 6, 2, 8, 14],     // Inverted V
-  // W patterns
-  [0, 6, 2, 8, 4],       // W top
-  [10, 6, 12, 8, 14],    // W bottom
-];
+// Re-export constants for component usage
+export { SYMBOLS, PAYLINES, ITEMS, TICKET_ITEMS, ACHIEVEMENTS, LEVELS, ITEM_KEYS, TICKET_ITEM_KEYS };
 
-export const ITEMS: Record<string, { name: string; icon: string; price: number; desc: string }> = {
-  luckyCharm: { name: 'LUCKY CHARM', icon: '🍀', price: 200, desc: '+CLOVER%' },
-  doubleStar: { name: 'DOUBLE STAR', icon: '⭐', price: 150, desc: '2X WIN' },
-  hotStreak: { name: 'HOT STREAK', icon: '🔥', price: 300, desc: '+5 SPINS' },
-  shield: { name: 'HOLY SHIELD', icon: '✝️', price: 250, desc: 'BLOCK 666' },
-  wildCard: { name: 'WILD CARD', icon: '🃏', price: 400, desc: 'ADD WILD' },
-};
-
-export const ITEM_KEYS = Object.keys(ITEMS) as Array<keyof typeof ITEMS>;
-
-// Ticket-purchasable items (consumable / active / passive)
-export type TicketItemType = 'consumable' | 'active' | 'passive';
-
-export interface TicketItem {
-  name: string;
-  icon: string;
-  price: number; // in tickets
-  desc: string;
-  type: TicketItemType;
-  duration?: number; // for active items (number of spins)
-}
-
-export const TICKET_ITEMS: Record<string, TicketItem> = {
-  // Passive items (permanent effects)
-  luckyBell: { name: 'LUCKY BELL', icon: '🔔', price: 5, desc: '+2% BELL', type: 'passive' },
-  ticketDoubler: { name: 'TICKET DOUBLER', icon: '🎫', price: 10, desc: '2X TICKETS', type: 'passive' },
-  coinMagnet: { name: 'COIN MAGNET', icon: '🧲', price: 8, desc: '+10% WINS', type: 'passive' },
-
-  // Active items (limited use)
-  scatterBoost: { name: 'SCATTER BOOST', icon: '⚡', price: 3, desc: '2X SCATTER 5 SPINS', type: 'active', duration: 5 },
-  sevenHunter: { name: 'SEVEN HUNTER', icon: '🎯', price: 4, desc: '+5% SEVEN 3 SPINS', type: 'active', duration: 3 },
-  crystalBall: { name: 'CRYSTAL BALL', icon: '🔮', price: 4, desc: 'PREVIEW NEXT', type: 'active', duration: 1 },
-
-  // Consumable items (one-time use)
-  curseAbsorb: { name: 'CURSE ABSORB', icon: '💀', price: 2, desc: '666→+3 TICKETS', type: 'consumable' },
-  instantJackpot: { name: 'MINI JACKPOT', icon: '💎', price: 6, desc: '+500 COINS NOW', type: 'consumable' },
-  rerollSpin: { name: 'REROLL', icon: '🔄', price: 2, desc: 'REROLL LAST', type: 'consumable' },
-};
-
-export const TICKET_ITEM_KEYS = Object.keys(TICKET_ITEMS) as Array<keyof typeof TICKET_ITEMS>;
-
-export const ACHIEVEMENTS = [
-  { id: 'firstWin', name: 'FIRST WIN', desc: 'WIN ONCE', reward: 50, icon: '🏆' },
-  { id: 'lucky7', name: 'LUCKY SEVEN', desc: 'HIT 7x3', reward: 200, icon: '7️⃣' },
-  { id: 'jackpotHunter', name: 'JACKPOT', desc: 'HIT 7x5', reward: 1000, icon: '💎' },
-  { id: 'spin100', name: '100 SPINS', desc: 'SPIN 100X', reward: 300, icon: '🎰' },
-  { id: 'spin500', name: '500 SPINS', desc: 'SPIN 500X', reward: 1000, icon: '🎲' },
-  { id: 'rich', name: 'HIGH ROLLER', desc: '10000 COINS', reward: 500, icon: '💰' },
-  { id: 'survivor', name: 'SURVIVOR', desc: 'SURVIVE 666', reward: 300, icon: '✝️' },
-  { id: 'cursed', name: 'CURSED', desc: 'HIT 666', reward: 100, icon: '😈' },
-];
-
-export const LEVELS = [
-  { level: 1, xp: 0, rank: '🥉', name: 'BRONZE' },
-  { level: 2, xp: 100, rank: '🥉', name: 'BRONZE' },
-  { level: 3, xp: 250, rank: '🥉', name: 'BRONZE' },
-  { level: 4, xp: 450, rank: '🥉', name: 'BRONZE' },
-  { level: 5, xp: 700, rank: '🥈', name: 'SILVER' },
-  { level: 6, xp: 1000, rank: '🥈', name: 'SILVER' },
-  { level: 7, xp: 1400, rank: '🥈', name: 'SILVER' },
-  { level: 8, xp: 1900, rank: '🥈', name: 'SILVER' },
-  { level: 9, xp: 2500, rank: '🥇', name: 'GOLD' },
-  { level: 10, xp: 3200, rank: '🥇', name: 'GOLD' },
-  { level: 11, xp: 4000, rank: '🥇', name: 'GOLD' },
-  { level: 12, xp: 5000, rank: '🥇', name: 'GOLD' },
-  { level: 13, xp: 6200, rank: '💎', name: 'DIAMOND' },
-  { level: 14, xp: 7600, rank: '💎', name: 'DIAMOND' },
-  { level: 15, xp: 9200, rank: '💎', name: 'DIAMOND' },
-];
-
-const DAILY_REWARDS = [100, 150, 200, 250, 300, 400, 500];
-
-// ===== AUDIO ENGINE =====
-const NOTES: Record<string, number> = {
-  C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23,
-  G4: 392.00, A4: 440.00, B4: 493.88, C5: 523.25,
-  D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99,
-};
-
-class AudioEngine {
-  ctx: AudioContext | null = null;
-
-  init() {
-    if (typeof window !== 'undefined' && !this.ctx) {
-      this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-  }
-
-  playNote(freq: number, duration: number, type: OscillatorType = 'square', volume = 0.1, delay = 0) {
-    if (!this.ctx) this.init();
-    if (!this.ctx) return;
-
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = type;
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    const startTime = this.ctx.currentTime + delay;
-    osc.frequency.setValueAtTime(freq, startTime);
-    gain.gain.setValueAtTime(volume, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-    osc.start(startTime);
-    osc.stop(startTime + duration);
-  }
-
-  play(type: string) {
-    switch (type) {
-      case 'spin':
-        [NOTES.C4, NOTES.E4, NOTES.G4].forEach((n, i) => this.playNote(n, 0.08, 'square', 0.08, i * 0.05));
-        break;
-      case 'stop':
-        this.playNote(NOTES.G4, 0.1, 'square', 0.12);
-        this.playNote(NOTES.C4, 0.15, 'square', 0.08, 0.05);
-        break;
-      case 'win':
-        [NOTES.C5, NOTES.E5, NOTES.G5, NOTES.C5, NOTES.E5].forEach((n, i) => this.playNote(n, 0.12, 'square', 0.1, i * 0.1));
-        break;
-      case 'jackpot':
-        [NOTES.C4, NOTES.E4, NOTES.G4, NOTES.C5, NOTES.G4, NOTES.C5, NOTES.E5, NOTES.G5].forEach((n, i) => {
-          this.playNote(n, 0.15, 'square', 0.12, i * 0.12);
-          if (i >= 4) this.playNote(n / 2, 0.15, 'triangle', 0.08, i * 0.12);
-        });
-        break;
-      case 'curse':
-        // Ominous sound for 666
-        [NOTES.C4 * 0.5, NOTES.C4 * 0.4, NOTES.C4 * 0.3].forEach((n, i) =>
-          this.playNote(n, 0.4, 'sawtooth', 0.15, i * 0.3)
-        );
-        break;
-      case 'buy':
-        this.playNote(NOTES.E5, 0.08, 'square', 0.1);
-        this.playNote(NOTES.G5, 0.1, 'square', 0.1, 0.08);
-        break;
-      case 'levelup':
-        [NOTES.C4, NOTES.E4, NOTES.G4, NOTES.C5, NOTES.E5, NOTES.G5].forEach((n, i) => {
-          this.playNote(n, 0.2, 'square', 0.1, i * 0.15);
-          this.playNote(n / 2, 0.2, 'triangle', 0.06, i * 0.15);
-        });
-        break;
-      case 'click':
-        this.playNote(NOTES.C5, 0.05, 'square', 0.08);
-        break;
-      case 'error':
-        this.playNote(NOTES.C4, 0.1, 'sawtooth', 0.08);
-        this.playNote(NOTES.C4 * 0.9, 0.15, 'sawtooth', 0.06, 0.1);
-        break;
-      case 'reel':
-        this.playNote(200 + Math.random() * 100, 0.03, 'square', 0.05);
-        break;
-    }
-  }
-}
-
-const audio = new AudioEngine();
-
-// ===== TYPES =====
-export type ItemsState = { [key: string]: number };
-export type ActiveEffects = { luckyCharm: number; doubleStar: boolean; wildCard: boolean; shield: boolean };
-export type AchievementsState = { [key: string]: boolean };
-export type PassiveEffects = { [key: string]: boolean }; // Permanent ticket item effects
-export type ActiveTicketEffects = { [key: string]: number }; // Remaining spins for active items
-
-export interface GameState {
-  credits: number;
-  bet: number;
-  jackpot: number;
-  lastWin: number;
-  totalSpins: number;
-  totalWins: number;
-  xp: number;
-  level: number;
-  items: ItemsState;
-  activeEffects: ActiveEffects;
-  bonusSpins: number;
-  achievements: AchievementsState;
-  lastDailyBonus: string | null;
-  dailyStreak: number;
-  curseCount: number;
-  // Ticket system
-  tickets: number;
-  ticketItems: ItemsState; // Owned ticket items (consumables count)
-  passiveEffects: PassiveEffects; // Purchased passive effects
-  activeTicketEffects: ActiveTicketEffects; // Active items with remaining duration
-}
-
-const INITIAL_STATE: GameState = {
-  credits: 1000,
-  bet: 10,
-  jackpot: 10000,
-  lastWin: 0,
-  totalSpins: 0,
-  totalWins: 0,
-  xp: 0,
-  level: 1,
-  items: { luckyCharm: 0, doubleStar: 0, hotStreak: 0, shield: 0, wildCard: 0 },
-  activeEffects: { luckyCharm: 0, doubleStar: false, wildCard: false, shield: false },
-  bonusSpins: 0,
-  achievements: {},
-  lastDailyBonus: null,
-  dailyStreak: 0,
-  curseCount: 0,
-  // Ticket system - start with 2 tickets
-  tickets: 2,
-  ticketItems: {},
-  passiveEffects: {},
-  activeTicketEffects: {},
-};
-
-// Helper: Get random symbol based on probability
-function getWeightedRandomSymbol(boostClover = false): Symbol {
-  const symbols = [...SYMBOLS];
-
-  // Boost clover probability if lucky charm active
-  if (boostClover) {
-    const cloverIdx = symbols.findIndex(s => s.id === 'clover');
-    if (cloverIdx !== -1) {
-      symbols[cloverIdx] = { ...symbols[cloverIdx], probability: 0.25 };
-    }
-  }
-
-  const totalProb = symbols.reduce((sum, s) => sum + s.probability, 0);
-  let random = Math.random() * totalProb;
-
-  for (const symbol of symbols) {
-    random -= symbol.probability;
-    if (random <= 0) return symbol;
-  }
-
-  return symbols[0];
-}
-
+// ===== HOOK =====
 export function useSlotMachine() {
-  const [state, setState] = useState<GameState>(INITIAL_STATE);
+  // State
+  const [state, setState] = useState<GameState>(INITIAL_GAME_STATE);
   const [isSpinning, setIsSpinning] = useState(false);
   const [message, setMessage] = useState('PRESS SPIN!');
-  // 5x3 grid - use static initial values to prevent hydration mismatch
-  const [grid, setGrid] = useState<string[]>([
-    '🍒', '🍋', '☘️', '🔔', '💎',
-    '🍋', '☘️', '🔔', '💎', '💰',
-    '☘️', '🔔', '💎', '💰', '7️⃣',
-  ]);
+  const [grid, setGrid] = useState<string[]>(getInitialGrid());
   const [isHydrated, setIsHydrated] = useState(false);
   const [winningCells, setWinningCells] = useState<number[]>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -288,236 +47,176 @@ export function useSlotMachine() {
   const [showCurse, setShowCurse] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Hydration complete - now safe to use random values
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  // Hydration
   useEffect(() => {
     setIsHydrated(true);
   }, []);
 
-  // Load game
+  // Helper: Update state
+  const updateState = useCallback((updates: Partial<GameState>) => {
+    setState(prev => {
+      const newState = { ...prev, ...updates };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+      return newState;
+    });
+  }, []);
+
+  // Helper: Play sound
+  const playSound = useCallback((type: Parameters<typeof audioEngine.play>[0]) => {
+    audioEngine.play(type);
+  }, []);
+
+  // Load saved game
   useEffect(() => {
-    const saved = localStorage.getItem('cloverCadiaState');
+    const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         setState(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to load save');
+      } catch {
+        console.error('Failed to load saved game');
       }
     }
   }, []);
 
-  // Save game
+  // Daily bonus check
   useEffect(() => {
-    localStorage.setItem('cloverCadiaState', JSON.stringify(state));
-  }, [state]);
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
 
-  const updateState = (updates: Partial<GameState>) => {
-    setState(prev => ({ ...prev, ...updates }));
-  };
-
-  const playSound = (type: string) => audio.play(type);
-
-  // Check for wins on all paylines
-  const checkWins = (gridSymbols: string[]): { totalWin: number; winningPositions: number[]; has666: boolean } => {
-    let totalWin = 0;
-    const winningPositions = new Set<number>();
-    let has666 = false;
-
-    // Check for 666 curse (3 or more 6️⃣ symbols)
-    const sixCount = gridSymbols.filter(s => s === '6️⃣').length;
-    if (sixCount >= 3) {
-      has666 = true;
+    if (state.lastDailyBonus !== today) {
+      const newStreak = state.lastDailyBonus === yesterday ? state.dailyStreak : 0;
+      updateState({ dailyStreak: newStreak });
+      setShowDailyBonus(true);
     }
+  }, []);
 
-    // Check each payline
-    for (const line of PAYLINES) {
-      const lineSymbols = line.map(idx => gridSymbols[idx]);
-
-      // Count consecutive matching symbols from left
-      let matchCount = 1;
-      const firstSymbol = lineSymbols[0];
-
-      // Skip if first symbol is curse
-      if (firstSymbol === '6️⃣') continue;
-
-      for (let i = 1; i < lineSymbols.length; i++) {
-        if (lineSymbols[i] === firstSymbol || lineSymbols[i] === '🃏') {
-          matchCount++;
-        } else {
-          break;
-        }
-      }
-
-      // Need at least 3 matching symbols
-      if (matchCount >= 3) {
-        const symbol = SYMBOLS.find(s => s.icon === firstSymbol);
-        if (symbol && symbol.value > 0) {
-          const multiplier = matchCount === 3 ? 1 : matchCount === 4 ? 3 : 10;
-          totalWin += symbol.value * multiplier;
-
-          // Mark winning positions
-          for (let i = 0; i < matchCount; i++) {
-            winningPositions.add(line[i]);
-          }
-        }
-      }
-    }
-
-    return { totalWin, winningPositions: Array.from(winningPositions), has666 };
-  };
+  // ===== ACTIONS =====
 
   const spin = async () => {
-    if (isSpinning) return;
-    if (state.bonusSpins === 0 && state.credits < state.bet) {
-      setMessage('! NO COINS !');
+    if (isSpinning || state.credits < state.bet) {
       playSound('error');
       return;
     }
 
     setIsSpinning(true);
     setWinningCells([]);
-    setShowCurse(false);
-
-    let currentCredits = state.credits;
-    let currentBonus = state.bonusSpins;
-
-    if (currentBonus > 0) {
-      currentBonus--;
-    } else {
-      currentCredits -= state.bet;
-    }
-
-    updateState({
-      credits: currentCredits,
-      bonusSpins: currentBonus,
-      totalSpins: state.totalSpins + 1,
-      lastWin: 0
-    });
-
     setMessage('>>> SPINNING <<<');
     playSound('spin');
 
-    // Animate grid
-    const animationInterval = setInterval(() => {
-      setGrid(prev => prev.map(() => getWeightedRandomSymbol().icon));
-      playSound('reel');
-    }, 80);
+    // Deduct bet (or use bonus spin)
+    const useBonus = state.bonusSpins > 0;
+    if (!useBonus) {
+      updateState({ credits: state.credits - state.bet });
+    } else {
+      updateState({ bonusSpins: state.bonusSpins - 1 });
+    }
 
-    // Generate final grid
-    const finalGrid = Array(15).fill('').map(() =>
+    // Generate new grid
+    let newGrid = Array(15).fill('').map(() =>
       getWeightedRandomSymbol(state.activeEffects.luckyCharm > 0).icon
     );
 
-    // Add wild cards if effect active
+    // Apply wild card effect
     if (state.activeEffects.wildCard) {
-      const randomIdx = Math.floor(Math.random() * 15);
-      finalGrid[randomIdx] = '🃏';
+      newGrid = addWildToGrid(newGrid);
+      updateState({ activeEffects: { ...state.activeEffects, wildCard: false } });
     }
 
-    await new Promise(r => setTimeout(r, 1500));
-    clearInterval(animationInterval);
+    // Animate spinning
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 50));
+      setGrid(Array(15).fill('').map(() => getWeightedRandomSymbol().icon));
+    }
 
-    setGrid(finalGrid);
-    playSound('stop');
+    setGrid(newGrid);
+
+    // Check for 666 curse
+    if (hasCurse(newGrid)) {
+      if (state.activeEffects.shield) {
+        // Shield blocks curse
+        playSound('win');
+        setMessage('✝️ SHIELD BLOCKED 666!');
+        updateState({ activeEffects: { ...state.activeEffects, shield: false } });
+        unlockAchievement('survivor');
+      } else {
+        // Curse triggers
+        playSound('curse');
+        setShowCurse(true);
+        setMessage('☠️ 666 CURSE! ALL COINS LOST!');
+        setTimeout(() => setShowCurse(false), 2000);
+        updateState({ credits: 0 });
+        unlockAchievement('cursed');
+        setIsSpinning(false);
+        return;
+      }
+    }
 
     // Calculate wins
-    const { totalWin, winningPositions, has666 } = checkWins(finalGrid);
+    let totalWin = 0;
+    const allWinningCells: number[] = [];
 
-    // Handle 666 curse
-    if (has666 && !state.activeEffects.shield) {
-      setShowCurse(true);
-      playSound('curse');
-      setMessage('☠️ 666! ALL COINS LOST! ☠️');
-      updateState({
-        credits: 0,
-        curseCount: state.curseCount + 1,
-        activeEffects: { ...state.activeEffects, shield: false }
-      });
-
-      if (!state.achievements['cursed']) {
-        unlockAchievement('cursed');
-      }
-
-      setIsSpinning(false);
-      return;
-    } else if (has666 && state.activeEffects.shield) {
-      // Shield blocked the curse
-      setMessage('✝️ CURSE BLOCKED! ✝️');
-      playSound('win');
-      updateState({
-        activeEffects: { ...state.activeEffects, shield: false }
-      });
-      if (!state.achievements['survivor']) {
-        unlockAchievement('survivor');
-      }
-    }
-
-    // Add XP
-    addXP(10);
-
-    if (totalWin > 0) {
-      let winAmount = state.bet * totalWin;
-      let dStar = state.activeEffects.doubleStar;
-
-      if (dStar) {
-        winAmount *= 2;
-        dStar = false;
-      }
-
-      const newCredits = currentCredits + winAmount;
-      setWinningCells(winningPositions);
-
-      updateState({
-        credits: newCredits,
-        lastWin: winAmount,
-        totalWins: state.totalWins + winAmount,
-        activeEffects: { ...state.activeEffects, doubleStar: dStar },
-        jackpot: totalWin >= 100 ? state.jackpot + Math.floor(state.bet * 0.1) : state.jackpot
-      });
-
-      if (totalWin >= 100) {
-        setMessage(`🎰 JACKPOT! +${winAmount}! 🎰`);
-        playSound('jackpot');
-        if (!state.achievements['jackpotHunter']) {
-          unlockAchievement('jackpotHunter');
+    for (const payline of PAYLINES) {
+      const win = checkPaylineWin(newGrid, payline);
+      if (win) {
+        const symbol = SYMBOLS.find(s => s.icon === win.symbol);
+        if (symbol && symbol.value > 0) {
+          const lineWin = symbol.value * state.bet * (win.matches - 2);
+          totalWin += lineWin;
+          allWinningCells.push(...win.cells);
         }
-      } else {
-        setMessage(`WIN! +${winAmount}!`);
-        playSound('win');
       }
+    }
 
-      // Check achievements
-      if (!state.achievements['firstWin']) {
-        unlockAchievement('firstWin');
-      }
+    // Apply double star effect
+    if (totalWin > 0 && state.activeEffects.doubleStar) {
+      totalWin *= 2;
+      updateState({ activeEffects: { ...state.activeEffects, doubleStar: false } });
+    }
 
-      // Check for 7x3+ wins
-      const sevenCount = finalGrid.filter(s => s === '7️⃣').length;
-      if (sevenCount >= 3 && !state.achievements['lucky7']) {
-        unlockAchievement('lucky7');
-      }
+    // Apply coin magnet passive
+    if (totalWin > 0 && state.passiveEffects.coinMagnet) {
+      totalWin = Math.floor(totalWin * 1.1);
+    }
 
-      if (newCredits >= 10000 && !state.achievements['rich']) {
-        unlockAchievement('rich');
-      }
+    setWinningCells([...new Set(allWinningCells)]);
+
+    // Update state with results
+    const currentState = stateRef.current;
+    const newCredits = currentState.credits + totalWin;
+    const newTotalSpins = currentState.totalSpins + 1;
+    const newTotalWins = totalWin > 0 ? currentState.totalWins + 1 : currentState.totalWins;
+
+    updateState({
+      credits: newCredits,
+      lastWin: totalWin,
+      totalSpins: newTotalSpins,
+      totalWins: newTotalWins,
+    });
+
+    // Decrease lucky charm counter
+    if (state.activeEffects.luckyCharm > 0) {
+      updateState({ activeEffects: { ...state.activeEffects, luckyCharm: state.activeEffects.luckyCharm - 1 } });
+    }
+
+    // Set message and play sound
+    if (totalWin > 0) {
+      playSound(totalWin >= state.bet * 10 ? 'jackpot' : 'win');
+      setMessage(`🎉 YOU WON ${totalWin} COINS!`);
+      addXP(Math.floor(totalWin / 10));
+      if (newTotalWins === 1) unlockAchievement('firstWin');
     } else {
+      playSound('lose');
       setMessage('TRY AGAIN...');
-      updateState({ jackpot: state.jackpot + Math.floor(state.bet * 0.05) });
+      addXP(5);
     }
 
-    // Cleanup effects
-    const newEffects = { ...state.activeEffects };
-    if (newEffects.luckyCharm > 0) newEffects.luckyCharm--;
-    newEffects.wildCard = false;
-    updateState({ activeEffects: newEffects });
-
-    // Check spin achievements
-    const spins = state.totalSpins + 1;
-    if (spins >= 100 && !state.achievements['spin100']) {
-      unlockAchievement('spin100');
-    }
-    if (spins >= 500 && !state.achievements['spin500']) {
-      unlockAchievement('spin500');
-    }
+    // Check achievements
+    if (newTotalSpins >= 100) unlockAchievement('spin100');
+    if (newTotalSpins >= 500) unlockAchievement('spin500');
+    if (newCredits >= 10000) unlockAchievement('rich');
 
     setIsSpinning(false);
   };
@@ -567,6 +266,63 @@ export function useSlotMachine() {
     playSound('buy');
   };
 
+  const buyTicketItem = (itemName: string) => {
+    const item = TICKET_ITEMS[itemName];
+    if (!item || state.tickets < item.price) {
+      playSound('error');
+      return;
+    }
+
+    const newTickets = state.tickets - item.price;
+
+    if (item.type === 'passive') {
+      const newPassive = { ...state.passiveEffects, [itemName]: true };
+      updateState({ tickets: newTickets, passiveEffects: newPassive });
+      setToast(`${item.icon} ${item.name} ACQUIRED!`);
+    } else {
+      const newTicketItems = { ...state.ticketItems, [itemName]: (state.ticketItems[itemName] || 0) + 1 };
+      updateState({ tickets: newTickets, ticketItems: newTicketItems });
+    }
+
+    playSound('buy');
+    setTimeout(() => setToast(null), 2000);
+  };
+
+  const useTicketItem = (itemName: string) => {
+    if (isSpinning) return;
+    const item = TICKET_ITEMS[itemName];
+    if (!item || item.type === 'passive') return;
+    if ((state.ticketItems[itemName] || 0) <= 0) return;
+
+    const newTicketItems = { ...state.ticketItems, [itemName]: state.ticketItems[itemName] - 1 };
+
+    if (item.type === 'active' && item.duration) {
+      const newActive = { ...state.activeTicketEffects, [itemName]: item.duration };
+      updateState({ ticketItems: newTicketItems, activeTicketEffects: newActive });
+      setToast(`${item.icon} ACTIVE FOR ${item.duration} SPINS!`);
+    } else if (item.type === 'consumable') {
+      switch (itemName) {
+        case 'instantJackpot':
+          updateState({ ticketItems: newTicketItems, credits: state.credits + 500 });
+          setToast('💎 +500 COINS!');
+          break;
+        case 'curseAbsorb':
+          updateState({ ticketItems: newTicketItems });
+          setToast('💀 CURSE ABSORB READY!');
+          break;
+        case 'rerollSpin':
+          updateState({ ticketItems: newTicketItems });
+          setToast('🔄 REROLL READY!');
+          break;
+        default:
+          updateState({ ticketItems: newTicketItems });
+      }
+    }
+
+    playSound('buy');
+    setTimeout(() => setToast(null), 2000);
+  };
+
   const unlockAchievement = (id: string) => {
     if (state.achievements[id]) return;
     const a = ACHIEVEMENTS.find(ac => ac.id === id);
@@ -592,86 +348,10 @@ export function useSlotMachine() {
     playSound('jackpot');
   };
 
-  useEffect(() => {
-    const today = new Date().toDateString();
-    const yesterday = new Date(Date.now() - 86400000).toDateString();
-
-    if (state.lastDailyBonus !== today) {
-      const newStreak = state.lastDailyBonus === yesterday ? state.dailyStreak : 0;
-      updateState({ dailyStreak: newStreak });
-      setShowDailyBonus(true);
-    }
-  }, []);
-
   const changeBet = (delta: number) => {
     const newBet = Math.max(10, Math.min(100, state.bet + delta));
     updateState({ bet: newBet });
     playSound('click');
-  };
-
-  // Buy ticket item
-  const buyTicketItem = (itemName: string) => {
-    const item = TICKET_ITEMS[itemName];
-    if (!item || state.tickets < item.price) {
-      playSound('error');
-      return;
-    }
-
-    const newTickets = state.tickets - item.price;
-
-    if (item.type === 'passive') {
-      // Passive items are permanent, just mark as owned
-      const newPassive = { ...state.passiveEffects, [itemName]: true };
-      updateState({ tickets: newTickets, passiveEffects: newPassive });
-      setToast(`${item.icon} ${item.name} ACQUIRED!`);
-    } else {
-      // Consumable and active items are stored in inventory
-      const newTicketItems = { ...state.ticketItems, [itemName]: (state.ticketItems[itemName] || 0) + 1 };
-      updateState({ tickets: newTickets, ticketItems: newTicketItems });
-    }
-
-    playSound('buy');
-    setTimeout(() => setToast(null), 2000);
-  };
-
-  // Use ticket item (consumable or active)
-  const useTicketItem = (itemName: string) => {
-    if (isSpinning) return;
-    const item = TICKET_ITEMS[itemName];
-    if (!item || item.type === 'passive') return; // Passive items are auto-applied
-    if ((state.ticketItems[itemName] || 0) <= 0) return;
-
-    const newTicketItems = { ...state.ticketItems, [itemName]: state.ticketItems[itemName] - 1 };
-
-    if (item.type === 'active' && item.duration) {
-      // Activate for N spins
-      const newActive = { ...state.activeTicketEffects, [itemName]: item.duration };
-      updateState({ ticketItems: newTicketItems, activeTicketEffects: newActive });
-      setToast(`${item.icon} ACTIVE FOR ${item.duration} SPINS!`);
-    } else if (item.type === 'consumable') {
-      // Immediate effect
-      switch (itemName) {
-        case 'instantJackpot':
-          updateState({ ticketItems: newTicketItems, credits: state.credits + 500 });
-          setToast('💎 +500 COINS!');
-          break;
-        case 'curseAbsorb':
-          // This is handled during spin if 666 occurs
-          updateState({ ticketItems: newTicketItems });
-          setToast('💀 CURSE ABSORB READY!');
-          break;
-        case 'rerollSpin':
-          // TODO: Implement reroll logic
-          updateState({ ticketItems: newTicketItems });
-          setToast('🔄 REROLL READY!');
-          break;
-        default:
-          updateState({ ticketItems: newTicketItems });
-      }
-    }
-
-    playSound('buy');
-    setTimeout(() => setToast(null), 2000);
   };
 
   return {
@@ -694,7 +374,7 @@ export function useSlotMachine() {
       buyTicketItem,
       useTicketItem,
       claimDaily,
-      playSound
-    }
+      playSound,
+    },
   };
 }
