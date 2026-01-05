@@ -1,94 +1,52 @@
-# 🎰 CloverCadia
+# 🎰 CloverCadia v2.0
+> **Retro Pixel Slot Machine with Roguelite Elements**  
+> *Spin, Survive, and Beat the Deadline!*
 
-**A retro-style web slot machine game with pixel art aesthetics and chiptune sounds.**
+![Banner Placeholder](https://via.placeholder.com/800x400.png?text=CloverCadia+v2.0)
 
-[🇰🇷 한국어](./README.ko.md)
+## 🎮 Introduction
+**CloverCadia** is a unique blend of **Classic Slots** and **Roguelite Mechanics**.  
+Unlike traditional slots, you are fightning against a **DEADLINE**.  
+Earn enough coins before your spins run out to advance to the next round, get ticket rewards, and receive mysterious phone calls...
 
----
+## ✨ Key Features (v2.0)
 
-## 🎮 Play Now
+### 1. 🎟️ Ticket System
+- **Tickets** are a premium currency earned by clearing rounds.
+- Use tickets in the **Ticket Shop** to buy powerful permanent items (Passive) or game-changing active items.
 
-👉 **[Play CloverCadia](https://clover-cadia.vercel.app)**
+### 2. ⏰ Deadline Round System
+- The game is divided into rounds with increasing difficulty.
+- **Round 1:** Reach 300 Coins within 15 Spins.
+- **Round 2:** Reach 800 Coins within 20 Spins.
+- If you run out of spins... **GAME OVER**.
 
----
+### 3. 📞 Phone Bonus System
+- Upon clearing a round, you receive a **Mysterious Phone Call**.
+- Choose 1 of 3 bonuses:
+  - 🎁 **Buffs:** Extra coins, tickets, or permanent probability boosts.
+  - 😈 **Risks:** High risk, high reward deals (e.g., -50% Coins for +10 Max Spins).
 
-## ✨ Features
-
-### 🎲 5×3 Slot Grid
-- 15-cell grid with 7 paylines (horizontal + diagonal)
-- Weighted symbol probabilities for balanced gameplay
-
-### 🍀 Symbols & Odds
-| Symbol | Name | Probability | Payout |
-|--------|------|-------------|--------|
-| 🍒🍋 | Cherry / Lemon | 19.4% | 2x |
-| ☘️🔔 | Clover / Bell | 14.9% | 5x |
-| 💎💰 | Diamond / Treasure | 11.9% | 10x |
-| 7️⃣ | Lucky Seven | 7.5% | 25x |
-| 6️⃣ | Curse | 1.5% | ☠️ |
-
-### ☠️ The 666 Curse
-> *When three 6s appear... you lose everything.*
-
-Hit 666 and watch your coins vanish! But don't worry—the **Holy Shield** item can protect you.
-
-### 🛒 Item Shop
-| Item | Effect |
-|------|--------|
-| 🍀 Lucky Charm | +Clover probability for 3 spins |
-| ⭐ Double Star | 2x winnings on next win |
-| 🔥 Hot Streak | +5 bonus spins |
-| ✝️ Holy Shield | Block the 666 curse |
-| 🃏 Wild Card | Add wild symbol to grid |
-
-### 🏆 Achievements
-Unlock 8 achievements including:
-- 🏆 First Win
-- 7️⃣ Lucky Seven (hit 7×3)
-- 💎 Jackpot Hunter (hit 7×5)
-- 😈 Cursed (trigger 666)
-- ✝️ Survivor (block 666 with shield)
-
-### 🌍 Bilingual Support
-Switch between **English** and **Korean** with one click!
-
----
+### 4. 🕹️ CloverPit Style Economy
+- **Fixed Spin Cost:** 10 Coins.
+- **No Betting Strategy:** Pure luck and item management.
+- **Symbol Values:** Wins are calculated by `Symbol Value x Match Multiplier`.
 
 ## 🛠️ Tech Stack
+- **Framework:** Next.js 14 + React
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS (Pixel Art Aesthetic)
+- **State Management:** Custom React Hooks
+- **Audio:** Web Audio API (Chiptune Sounds)
 
-- **Framework**: Next.js 16 (App Router)
-- **UI**: 8bitcn/ui + Tailwind CSS
-- **Audio**: Web Audio API (Chiptune engine)
-- **Font**: Press Start 2P
-- **Storage**: localStorage
-- **Deploy**: Vercel
-
----
-
-## 🚀 Getting Started
-
+## 🚀 How to Run
 ```bash
-# Clone
-git clone https://github.com/coincidence-one/clover-cadia.git
-cd clover-cadia
-
-# Install
+# Install dependencies
 npm install
 
-# Run
+# Run development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and spin!
-
----
-
 ## 📜 License
-
-MIT License © 2024
-
----
-
-<p align="center">
-  <strong>🎰 Spin the reels. Chase the jackpot. Fear the 666. 🎰</strong>
-</p>
+MIT

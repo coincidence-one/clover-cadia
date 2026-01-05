@@ -24,9 +24,11 @@ export const ko: Translations = {
 
   // Achievements
   trophies: '업적',
+  achievementsTitle: '나의 업적',
 
   // Messages
   pressSpin: '스핀을 눌러주세요!',
+  ready: '준비됨',
   noCoins: '! 코인 부족 !',
   spinningMsg: '>>> 돌리는 중 <<<',
   tryAgain: '다시 도전하세요...',
@@ -47,6 +49,27 @@ export const ko: Translations = {
   dailyBonus: '일일 보너스',
   streak: '연속 출석: {days}일',
   claimReward: '보상 받기',
+
+  // Ticket Shop
+  shopTitle: '티켓 상점',
+  tickets: '티켓',
+  passiveLabel: '패시브 (영구)',
+  activeLabel: '액티브',
+  consumableLabel: '소모품 (1회성)',
+
+  // Round System
+  round: '라운드',
+  goal: '목표',
+  spinsLeft: '남은 스핀',
+  roundCleared: '라운드 클리어!',
+  nextRound: '다음 라운드 ➡️',
+  gameOver: '게임 오버',
+  outOfSpins: '스핀 소진!',
+  restart: '게임 재시작',
+
+  // Phone Bonus
+  incomingCall: '전화가 왔습니다...',
+  pickBonus: '보너스를 선택하세요:',
 
   // Items
   items: {
@@ -71,4 +94,5 @@ export const ko: Translations = {
 
   // Language
   language: '한',
-} as const;
+  spinCostAlias: '스핀 비용'
+};

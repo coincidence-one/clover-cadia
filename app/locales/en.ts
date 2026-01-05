@@ -22,9 +22,11 @@ export interface Translations {
 
   // Achievements
   trophies: string;
+  achievementsTitle: string;
 
   // Messages
   pressSpin: string;
+  ready: string;
   noCoins: string;
   spinningMsg: string;
   tryAgain: string;
@@ -45,6 +47,27 @@ export interface Translations {
   dailyBonus: string;
   streak: string;
   claimReward: string;
+
+  // Ticket Shop
+  shopTitle: string;
+  tickets: string;
+  passiveLabel: string;
+  activeLabel: string;
+  consumableLabel: string;
+
+  // Round System
+  round: string;
+  goal: string;
+  spinsLeft: string;
+  roundCleared: string;
+  nextRound: string;
+  gameOver: string;
+  outOfSpins: string;
+  restart: string;
+
+  // Phone Bonus
+  incomingCall: string;
+  pickBonus: string;
 
   // Items
   items: {
@@ -69,6 +92,7 @@ export interface Translations {
 
   // Language
   language: string;
+  spinCostAlias: string;
 }
 
 export const en: Translations = {
@@ -93,11 +117,34 @@ export const en: Translations = {
   // Shop
   itemShop: 'ITEM SHOP',
 
+  // Ticket Shop
+  shopTitle: 'TICKET SHOP',
+  tickets: 'TICKETS',
+  passiveLabel: 'PASSIVE (PERM)',
+  activeLabel: 'ACTIVE',
+  consumableLabel: 'CONSUMABLE',
+
+  // Round System
+  round: 'ROUND',
+  goal: 'GOAL',
+  spinsLeft: 'SPINS LEFT',
+  roundCleared: 'ROUND CLEARED!',
+  nextRound: 'NEXT ROUND ➡️',
+  gameOver: 'GAME OVER',
+  outOfSpins: 'OUT OF SPINS!',
+  restart: 'RESTART GAME',
+
+  // Phone Bonus
+  incomingCall: 'INCOMING CALL...',
+  pickBonus: 'Pick a bonus:',
+
   // Achievements
   trophies: 'TROPHIES',
+  achievementsTitle: 'ACHIEVEMENTS',
 
   // Messages
   pressSpin: 'PRESS SPIN!',
+  ready: 'READY',
   noCoins: '! NO COINS !',
   spinningMsg: '>>> SPINNING <<<',
   tryAgain: 'TRY AGAIN...',
@@ -142,4 +189,5 @@ export const en: Translations = {
 
   // Language
   language: 'EN',
+  spinCostAlias: 'SPIN COST'
 };

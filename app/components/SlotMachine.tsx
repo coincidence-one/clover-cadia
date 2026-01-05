@@ -1,12 +1,18 @@
 'use client';
 
 import React from 'react';
-import { useSlotMachine, ITEMS, ACHIEVEMENTS, LEVELS, ITEM_KEYS, PAYLINES, TICKET_ITEMS, TICKET_ITEM_KEYS, SPIN_COST } from '@/app/hooks/useSlotMachine';
+import { useSlotMachine, ITEMS, ACHIEVEMENTS, LEVELS, ITEM_KEYS, PAYLINES, SPIN_COST } from '@/app/hooks/useSlotMachine';
 import { useLocale } from '@/app/contexts/LocaleContext';
 import { Button } from '@/components/ui/8bit/button';
 import { Card } from '@/components/ui/8bit/card';
 import { Badge } from '@/components/ui/8bit/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/8bit/dialog';
+
+// Sub-components
+import { RoundInfoBar } from '@/app/components/slot-machine/RoundInfoBar';
+import { TicketShop } from '@/app/components/slot-machine/TicketShop';
+import { PhoneCallModal } from '@/app/components/slot-machine/PhoneCallModal';
+import { GameModals } from '@/app/components/slot-machine/GameModals';
 
 export default function SlotMachine() {
   const { state, isSpinning, message, grid, winningCells, showLevelUp, setShowLevelUp, showDailyBonus, setShowDailyBonus, showCurse, toast, actions } = useSlotMachine();
@@ -50,139 +56,82 @@ export default function SlotMachine() {
             {t.language}
           </Button>
 
-          {/* Shop Trigger */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="h-10 w-16 text-xs px-2">{t.shop}</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md bg-stone-800 border-4 border-white text-white">
-              <DialogHeader>
-                <DialogTitle className="text-yellow-400 text-center text-xl">{t.itemShop}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="text-center border-2 border-green-500 p-2 text-green-400">
-                  {t.coins}: {state.credits}
-                </div>
-                {ITEM_KEYS.map((key) => {
-                  const item = ITEMS[key];
-                  const translation = getItemTranslation(key);
-                  return (
-                    <div key={key} className="flex items-center justify-between bg-black p-2 border border-white">
-                      <div className="text-2xl mr-4">{item.icon}</div>
-                      <div className="flex-1">
-                        <div className="text-xs text-white">{translation.name}</div>
-                        <div className="text-[10px] text-cyan-400">{translation.desc}</div>
-                      </div>
-                      <Button size="sm" onClick={() => actions.buyItem(key)} disabled={state.credits < item.price}>
-                        {item.price}
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </DialogContent>
-          </Dialog>
+          {/* Ticket Shop */}
+          <TicketShop 
+            state={state} 
+            onBuy={actions.buyTicketItem}
+            shopTitle={t.shopTitle} 
+          />
 
-          {/* Achievements Trigger */}
+          {/* Achievements Dialog */}
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" className="h-10 w-12 text-xs">🏆</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md bg-stone-800 border-4 border-white text-white h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-yellow-400 text-center text-xl">{t.trophies}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-2">
-                {ACHIEVEMENTS.map(ach => {
-                  const translation = getAchievementTranslation(ach.id);
-                  return (
-                    <div key={ach.id} className={`flex items-center p-2 border-2 ${state.achievements[ach.id] ? 'border-yellow-400 bg-stone-900' : 'border-gray-600 bg-stone-950 opacity-50'}`}>
-                      <div className="text-2xl mr-4">{ach.icon}</div>
-                      <div className="flex-1">
-                        <div className="text-xs text-white">{translation.name}</div>
-                        <div className="text-[10px] text-gray-400">{translation.desc}</div>
-                      </div>
-                      <div>{state.achievements[ach.id] ? '✅' : '🔒'}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Ticket Shop Trigger */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="h-10 px-3 text-xs bg-yellow-900 border-yellow-500 text-yellow-400">
-                🎟️ {state.tickets}
-              </Button>
+              <Button variant="outline" className="h-10 w-10 text-xl px-0">🏆</Button>
             </DialogTrigger>
             <DialogContent className="max-w-md bg-stone-800 border-4 border-yellow-500 text-white h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-yellow-400 text-center text-xl">🎟️ TICKET SHOP</DialogTitle>
+                <DialogTitle className="text-yellow-400 text-center text-xl">{t.achievementsTitle}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
-                <div className="text-center border-2 border-yellow-500 p-2 text-yellow-400 text-lg">
-                  🎟️ TICKETS: {state.tickets}
-                </div>
-                
-                {/* Passive Items */}
-                <div className="text-center text-purple-400 text-xs border-b border-purple-400 pb-1">🟣 PASSIVE (PERMANENT)</div>
-                {TICKET_ITEM_KEYS.filter(k => TICKET_ITEMS[k].type === 'passive').map((key) => {
-                  const item = TICKET_ITEMS[key];
-                  const owned = state.passiveEffects[key];
+                {ACHIEVEMENTS.map((ach) => {
+                  const unlocked = state.achievements[ach.id];
+                  const achText = getAchievementTranslation(ach.id);
                   return (
-                    <div key={key} className={`flex items-center justify-between bg-black p-2 border ${owned ? 'border-purple-400' : 'border-white'}`}>
-                      <div className="text-2xl mr-3">{item.icon}</div>
-                      <div className="flex-1">
-                        <div className="text-xs text-white">{item.name}</div>
-                        <div className="text-[10px] text-purple-400">{item.desc}</div>
+                    <div key={ach.id} className={`flex items-center p-2 border-2 ${unlocked ? 'border-yellow-400 bg-yellow-900/20' : 'border-stone-600 opacity-50'}`}>
+                      <div className="text-2xl mr-3">{ach.icon}</div>
+                      <div>
+                        <div className="text-xs font-bold text-yellow-400">{achText.name}</div>
+                        <div className="text-[10px] text-stone-400">{achText.desc}</div>
                       </div>
-                      {owned ? (
-                        <span className="text-green-400 text-xs">✓ OWNED</span>
-                      ) : (
-                        <Button size="sm" onClick={() => actions.buyTicketItem(key)} disabled={state.tickets < item.price}>
-                          🎟️{item.price}
-                        </Button>
-                      )}
+                      {unlocked && <div className="ml-auto text-green-400 text-xs">✓</div>}
                     </div>
                   );
                 })}
+              </div>
+            </DialogContent>
+          </Dialog>
 
-                {/* Active Items */}
-                <div className="text-center text-green-400 text-xs border-b border-green-400 pb-1 mt-2">🟢 ACTIVE ({TICKET_ITEMS.scatterBoost.duration} SPINS)</div>
-                {TICKET_ITEM_KEYS.filter(k => TICKET_ITEMS[k].type === 'active').map((key) => {
-                  const item = TICKET_ITEMS[key];
-                  const count = state.ticketItems[key] || 0;
+          {/* Item Shop Dialog */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="h-10 w-10 text-xl px-0">🛒</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md bg-stone-800 border-4 border-green-500 text-white">
+              <DialogHeader>
+                <DialogTitle className="text-green-400 text-center text-xl">{t.shopTitle}</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                {ITEM_KEYS.map((key) => {
+                  const item = ITEMS[key];
+                  const itemText = getItemTranslation(key);
                   return (
-                    <div key={key} className="flex items-center justify-between bg-black p-2 border border-white">
-                      <div className="text-2xl mr-3">{item.icon}</div>
-                      <div className="flex-1">
-                        <div className="text-xs text-white">{item.name} <span className="text-green-400">x{count}</span></div>
-                        <div className="text-[10px] text-green-400">{item.desc}</div>
-                      </div>
-                      <Button size="sm" onClick={() => actions.buyTicketItem(key)} disabled={state.tickets < item.price}>
-                        🎟️{item.price}
-                      </Button>
-                    </div>
-                  );
-                })}
-
-                {/* Consumable Items */}
-                <div className="text-center text-cyan-400 text-xs border-b border-cyan-400 pb-1 mt-2">🔵 CONSUMABLE (ONE-TIME)</div>
-                {TICKET_ITEM_KEYS.filter(k => TICKET_ITEMS[k].type === 'consumable').map((key) => {
-                  const item = TICKET_ITEMS[key];
-                  const count = state.ticketItems[key] || 0;
-                  return (
-                    <div key={key} className="flex items-center justify-between bg-black p-2 border border-white">
-                      <div className="text-2xl mr-3">{item.icon}</div>
-                      <div className="flex-1">
-                        <div className="text-xs text-white">{item.name} <span className="text-cyan-400">x{count}</span></div>
-                        <div className="text-[10px] text-cyan-400">{item.desc}</div>
-                      </div>
-                      <Button size="sm" onClick={() => actions.buyTicketItem(key)} disabled={state.tickets < item.price}>
-                        🎟️{item.price}
-                      </Button>
+                    <div key={key} className="flex items-center justify-between border-b border-stone-700 pb-2">
+                       <div className="flex items-center">
+                          <div className="text-2xl mr-2">{item.icon}</div>
+                          <div>
+                            <div className="text-xs text-white">{itemText.name}</div>
+                            <div className="text-[10px] text-green-400">{itemText.desc}</div>
+                          </div>
+                       </div>
+                       <div className="flex flex-col items-end gap-1">
+                          <div className="text-[10px] text-stone-400">Owned: {state.items[key]}</div>
+                          <Button 
+                             size="sm" 
+                             className="h-6 text-[10px]"
+                             onClick={() => actions.buyItem(key)}
+                             disabled={state.credits < item.price}
+                          >
+                            Buy {item.price}
+                          </Button>
+                          <Button 
+                             size="sm" 
+                             className="h-6 text-[10px] bg-blue-600 hover:bg-blue-500"
+                             onClick={() => actions.useItem(key)}
+                             disabled={state.items[key] <= 0 || isSpinning}
+                          >
+                            Use
+                          </Button>
+                       </div>
                     </div>
                   );
                 })}
@@ -192,15 +141,14 @@ export default function SlotMachine() {
         </div>
       </div>
 
-      {/* Top Bar - Row 2: XP Progress Bar */}
-      <div className="w-full max-w-2xl mb-4">
-        <div className="w-full h-7 bg-black border-2 border-white flex items-center justify-center">
-          <span className="text-xs text-white whitespace-nowrap">
-            {state.xp} / {nextLevel?.xp || 'MAX'} {t.xp}
-          </span>
-        </div>
-        <div className="w-full h-2 bg-black border-x-2 border-b-2 border-white">
-          <div className="h-full bg-purple-600 transition-all" style={{ width: `${xpProgress}%` }} />
+      {/* Top Bar - Row 2: XP Bar */}
+      <div className="w-full max-w-2xl bg-stone-800 border-2 border-stone-600 h-3 mb-4 rounded-full overflow-hidden flex flex-row items-center relative">
+        <div 
+          className="bg-purple-600 h-full transition-all duration-500"
+          style={{ width: `${xpProgress}%` }} 
+        />
+        <div className="absolute inset-0 flex items-center justify-center text-[8px] text-white font-mono z-10 w-full text-center">
+             XP {Math.floor(state.xp)} / {nextLevel ? nextLevel.xp : 'MAX'}
         </div>
       </div>
 
@@ -211,24 +159,7 @@ export default function SlotMachine() {
       </div>
 
       {/* Round Info Bar */}
-      <div className="w-full max-w-lg flex gap-2 mb-4">
-        <div className="flex-1 bg-purple-900 border-2 border-purple-400 p-2 text-center">
-            <div className="text-[10px] text-purple-200">ROUND</div>
-            <div className="text-xl text-white">{state.round}</div>
-        </div>
-        <div className={`flex-1 border-2 p-2 text-center ${state.credits >= state.currentGoal ? 'bg-green-900 border-green-400 animate-pulse' : 'bg-black border-white'}`}>
-            <div className="text-[10px] text-gray-400">GOAL</div>
-            <div className={`text-xl ${state.credits >= state.currentGoal ? 'text-green-400' : 'text-white'}`}>
-                {state.currentGoal}
-            </div>
-        </div>
-        <div className={`flex-1 border-2 p-2 text-center ${state.spinsLeft <= 3 ? 'bg-red-900 border-red-500 animate-pulse' : 'bg-black border-white'}`}>
-            <div className="text-[10px] text-gray-400">SPINS LEFT</div>
-            <div className={`text-xl ${state.spinsLeft <= 3 ? 'text-red-500' : 'text-white'}`}>
-                {state.spinsLeft}/{state.maxSpins}
-            </div>
-        </div>
-      </div>
+      <RoundInfoBar state={state} />
 
       {/* Jackpot */}
       <div className="w-full max-w-lg bg-black border-4 border-double border-yellow-500 p-2 mb-4 text-center">
@@ -236,221 +167,80 @@ export default function SlotMachine() {
         <div className="text-2xl text-yellow-400 drop-shadow-md">{state.jackpot}</div>
       </div>
 
-      {/* Round Clear Modal */}
-      <Dialog open={state.credits >= state.currentGoal && !state.gameOver} onOpenChange={() => {}}>
-        <DialogContent className="bg-green-900 border-4 border-green-400 text-center pointer-events-auto">
-          <DialogHeader>
-            <DialogTitle className="text-yellow-400 text-2xl animate-bounce">🎉 ROUND CLEARED! 🎉</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 text-white">
-             <p className="mb-4">GOAL REACHED!</p>
-             <div className="text-3xl mb-2">🎟️ REWARD READY</div>
-             <p className="text-xs text-green-200">Advance to next round for harder challenge & more tickets!</p>
-          </div>
-          <Button className="w-full bg-yellow-500 text-black text-xl h-12 hover:bg-yellow-400" onClick={actions.nextRound}>
-            NEXT ROUND ➡️
-          </Button>
-        </DialogContent>
-      </Dialog>
-
-      {/* Phone Call Modal */}
-      <Dialog open={state.showPhoneModal} onOpenChange={() => {}}>
-        <DialogContent className="max-w-2xl bg-stone-900 border-4 border-cyan-500 text-center pointer-events-auto p-6">
-          <DialogHeader>
-            <DialogTitle className="text-cyan-400 text-3xl font-bold animate-pulse">📞 INCOMING CALL...</DialogTitle>
-          </DialogHeader>
-          <div className="py-2 text-white">
-             <div className="text-6xl mb-4 animate-bounce">☎️</div>
-             <p className="mb-6 text-lg">Pick a bonus to continue:</p>
-             
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {state.currentPhoneChoices.map((bonus) => (
-                    <div 
-                        key={bonus.id} 
-                        className={`
-                            border-2 p-3 cursor-pointer transition-all transform hover:scale-105
-                            ${bonus.type === 'buff' ? 'border-green-400 bg-green-950 hover:bg-green-900' : ''}
-                            ${bonus.type === 'risk' ? 'border-red-400 bg-red-950 hover:bg-red-900' : ''}
-                            ${bonus.type === 'special' ? 'border-yellow-400 bg-yellow-950 hover:bg-yellow-900' : ''}
-                        `}
-                        onClick={() => actions.selectPhoneBonus(bonus.id)}
-                    >
-                        <div className="text-2xl mb-2">
-                            {bonus.type === 'buff' && '🎁'}
-                            {bonus.type === 'risk' && '😈'}
-                            {bonus.type === 'special' && '🌟'}
-                        </div>
-                        <div className="font-bold text-sm mb-1">{bonus.name}</div>
-                        <div className="text-[10px] opacity-80">{bonus.desc}</div>
-                    </div>
-                ))}
-             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Game Over Modal */}
-      <Dialog open={state.gameOver} onOpenChange={() => {}}>
-        <DialogContent className="bg-red-950 border-4 border-red-600 text-center pointer-events-auto">
-          <DialogHeader>
-            <DialogTitle className="text-red-500 text-3xl font-bold">☠️ GAME OVER ☠️</DialogTitle>
-          </DialogHeader>
-          <div className="py-6 text-white">
-             <div className="text-6xl mb-4">🪦</div>
-             <p className="text-xl mb-2">OUT OF SPINS!</p>
-             <p className="text-xs text-red-300">Target was {state.currentGoal} coins.</p>
-          </div>
-          <Button className="w-full bg-white text-black text-xl h-12 hover:bg-gray-200" onClick={actions.restartGame}>
-            🔄 RESTART GAME
-          </Button>
-        </DialogContent>
-      </Dialog>
-
       {/* 5x3 Slot Grid (CloverPit Style) */}
       <div className={`relative bg-stone-800 p-3 border-4 border-white mb-4 ${showCurse ? 'border-red-500 shadow-[0_0_30px_rgba(255,0,0,0.5)]' : winningCells.length > 0 ? 'animate-pulse border-yellow-400' : ''}`}>
         {/* Payline indicator */}
-        {winningCells.length > 0 && (
-          <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-yellow-400 text-xs animate-bounce">
-            ★ WIN! ★
-          </div>
-        )}
-        
-        <div className="grid grid-cols-5 gap-1">
-          {grid.map((symbol, idx) => {
-            const isWinning = winningCells.includes(idx);
-            const isCurse = symbol === '6️⃣';
-            
+        <div className="absolute -left-6 top-0 bottom-0 flex flex-col justify-around text-[8px] text-stone-500">
+             {PAYLINES.map((_, i) => <div key={i}>►</div>)}
+        </div>
+
+        <div className="grid grid-cols-5 gap-1 bg-black p-1">
+          {grid.map((cell, i) => {
+            const isWinning = winningCells.includes(i);
             return (
               <div 
-                key={idx}
+                key={i} 
                 className={`
-                  w-12 h-12 md:w-14 md:h-14 
-                  bg-black border-2 
-                  flex items-center justify-center 
-                  text-2xl md:text-3xl
-                  transition-all duration-200
-                  ${isWinning ? 'border-yellow-400 bg-yellow-900/30 scale-110 z-10' : 'border-cyan-800'}
-                  ${isCurse ? 'border-red-500 bg-red-900/30' : ''}
-                  ${isSpinning ? 'animate-pulse' : ''}
+                  w-12 h-12 md:w-16 md:h-16 flex items-center justify-center text-3xl md:text-4xl bg-stone-900 border 
+                  ${isWinning ? 'border-yellow-400 bg-yellow-900/50 animate-bounce' : 'border-stone-700'}
+                  transition-all duration-100
                 `}
               >
-                {symbol}
+                {cell}
               </div>
             );
           })}
         </div>
-        
-        {/* 666 Curse Overlay */}
-        {showCurse && (
-          <div className="absolute inset-0 bg-red-900/80 flex items-center justify-center">
-            <div className="text-4xl text-red-500 animate-pulse">☠️ 666 ☠️</div>
-          </div>
-        )}
       </div>
 
-      {/* Message */}
-      <Card className="w-full max-w-2xl mb-4 bg-black border-white min-h-[50px] flex items-center justify-center">
-         <span className={`text-sm text-center px-2 ${showCurse ? 'text-red-400' : winningCells.length > 0 ? 'text-yellow-400 animate-bounce' : 'text-green-400'}`}>
-            {message}
-         </span>
-      </Card>
-
-      {/* Item Bar */}
-      <div className="flex gap-2 mb-4 flex-wrap justify-center">
-        {ITEM_KEYS.map((key) => {
-            const item = ITEMS[key];
-            const isActive = 
-              (key === 'luckyCharm' && state.activeEffects.luckyCharm > 0) ||
-              (key === 'doubleStar' && state.activeEffects.doubleStar) ||
-              (key === 'shield' && state.activeEffects.shield) ||
-              (key === 'wildCard' && state.activeEffects.wildCard);
-            
-            return (
-                <div 
-                    key={key} 
-                    className={`
-                      relative w-12 h-12 bg-stone-700 border-2 border-white 
-                      flex items-center justify-center cursor-pointer 
-                      hover:bg-green-700 transition-colors
-                      ${state.items[key] > 0 ? '' : 'opacity-40 grayscale'}
-                      ${isActive ? 'border-green-400 bg-green-800 animate-pulse' : ''}
-                    `}
-                    onClick={() => actions.useItem(key)}
-                >
-                    <span className="text-xl">{item.icon}</span>
-                    <span className="absolute bottom-0 right-0 bg-red-500 text-white text-[8px] px-1">{state.items[key]}</span>
-                    {isActive && key === 'luckyCharm' && (
-                      <span className="absolute top-0 left-0 bg-green-500 text-white text-[8px] px-1">{state.activeEffects.luckyCharm}</span>
-                    )}
-                </div>
-            );
-        })}
+      {/* Message Display */}
+      <div className="h-8 mb-4 text-center">
+        <p className={`text-sm ${message.includes('WIN') ? 'text-yellow-400 animate-bounce' : 'text-green-400'}`}>
+          {message || (isSpinning ? '...' : t.ready)}
+        </p>
       </div>
 
       {/* Controls */}
-      <div className="w-full max-w-2xl">
-         <div className="flex gap-2 mb-2">
-            <div className="flex-1 bg-black border-2 border-white p-2 text-center">
-                <div className="text-[10px] text-cyan-400">{t.coins}</div>
-                <div className={`text-sm ${state.credits === 0 ? 'text-red-400' : 'text-green-400'}`}>{state.credits}</div>
+      <div className="flex flex-col items-center gap-4 w-full max-w-sm">
+         <div className="flex gap-4 w-full">
+            <div className="flex-1 bg-black border-2 border-stone-600 p-2 text-center">
+                <div className="text-[10px] text-stone-400">{t.coins}</div>
+                <div className="text-xl text-yellow-400">{state.credits}</div>
             </div>
-            <div className="flex-1 bg-black border-2 border-white p-2 text-center">
-                <div className="text-[10px] text-cyan-400">SPIN COST</div>
-                <div className="text-sm text-green-400">{SPIN_COST}</div>
+            {/* Spin Cost Display */}
+             <div className="flex-1 bg-black border-2 border-stone-600 p-2 text-center">
+                <div className="text-[10px] text-stone-400">{t.spinCostAlias || "SPIN COST"}</div>
+                <div className="text-xl text-red-400">{SPIN_COST}</div>
             </div>
-            <div className="flex-1 bg-black border-2 border-white p-2 text-center">
-                <div className="text-[10px] text-cyan-400">{t.win}</div>
-                <div className="text-sm text-yellow-400">{state.lastWin}</div>
-            </div>
-            {state.bonusSpins > 0 && (
-              <div className="flex-1 bg-yellow-900 border-2 border-yellow-400 p-2 text-center animate-pulse">
-                <div className="text-[10px] text-yellow-400">BONUS</div>
-                <div className="text-sm text-yellow-400">{state.bonusSpins}</div>
-              </div>
-            )}
          </div>
 
-         <div className="flex gap-4 items-center justify-center">
-             <Button 
-                className={`w-40 h-14 text-xl border-4 border-white ${showCurse ? 'bg-red-600 hover:bg-red-500' : 'bg-green-600 hover:bg-green-500'} text-black`}
-                onClick={actions.spin}
-                disabled={isSpinning}
-             >
-                {isSpinning ? t.spinning : `${t.spin} (-${SPIN_COST})`}
-             </Button>
-         </div>
+         <Button 
+            className={`w-full h-16 text-2xl tracking-widest ${isSpinning ? 'bg-stone-700' : 'bg-red-600 hover:bg-red-500'} border-b-4 border-red-800 active:border-b-0 active:mt-1`}
+            onClick={actions.spin}
+            disabled={isSpinning || state.credits < 10 && state.bonusSpins <= 0}
+         >
+            {isSpinning ? '...' : state.bonusSpins > 0 ? `FREE SPIN (${state.bonusSpins})` : `SPIN (-${SPIN_COST})`}
+         </Button>
       </div>
 
-      {/* Modals: Level Up & Daily */}
-      <Dialog open={showLevelUp} onOpenChange={setShowLevelUp}>
-         <DialogContent className="bg-stone-800 border-4 border-green-400 text-center">
-            <DialogHeader>
-                <DialogTitle className="text-green-400 text-2xl">{t.levelUp}</DialogTitle>
-            </DialogHeader>
-            <div className="text-6xl my-4">⬆️</div>
-            <div className="text-white">{t.levelLabel} {state.level}</div>
-            <div className="text-yellow-400 text-sm mt-2">{t.reward.replace('{amount}', String(state.level * 100))}</div>
-            <Button onClick={() => setShowLevelUp(false)} className="mt-4">{t.ok}</Button>
-         </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showDailyBonus} onOpenChange={setShowDailyBonus}>
-         <DialogContent className="bg-stone-800 border-4 border-red-500 text-center">
-            <DialogHeader>
-                <DialogTitle className="text-red-400 text-2xl">{t.dailyBonus}</DialogTitle>
-            </DialogHeader>
-            <div className="text-6xl my-4 animate-bounce">🎁</div>
-            <div className="text-white">{t.streak.replace('{days}', String(state.dailyStreak))}</div>
-            <Button onClick={actions.claimDaily} className="mt-4 bg-red-500 hover:bg-red-400 text-white">{t.claimReward}</Button>
-         </DialogContent>
-      </Dialog>
-      
-      {/* Toast */}
+      {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-yellow-400 text-black px-4 py-2 border-4 border-white z-50 animate-in slide-in-from-top fade-in duration-300">
-           {toast}
-        </div>
+          <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black px-4 py-2 rounded-full font-bold animate-bounce shadow-lg z-50 whitespace-nowrap">
+              {toast}
+          </div>
       )}
+
+      {/* Separated Modals */}
+      <PhoneCallModal state={state} onSelect={actions.selectPhoneBonus} />
+      
+      <GameModals 
+         state={state} 
+         showLevelUp={showLevelUp} 
+         setShowLevelUp={setShowLevelUp} 
+         onNextRound={actions.nextRound} 
+         onRestart={actions.restartGame}
+      />
+
     </div>
   );
 }
