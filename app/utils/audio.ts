@@ -1,7 +1,7 @@
 // Audio Engine for chiptune sound effects
 // Uses Web Audio API to generate 8-bit style sounds
 
-type SoundType = 'spin' | 'win' | 'jackpot' | 'lose' | 'click' | 'buy' | 'error' | 'levelup' | 'curse';
+export type SoundType = 'spin' | 'win' | 'jackpot' | 'lose' | 'click' | 'buy' | 'error' | 'levelup' | 'curse' | 'start';
 
 export class AudioEngine {
   private ctx: AudioContext | null = null;

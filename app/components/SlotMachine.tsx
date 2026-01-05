@@ -14,6 +14,7 @@ import { TicketShop } from '@/app/components/slot-machine/TicketShop';
 import { PhoneCallModal } from '@/app/components/slot-machine/PhoneCallModal';
 import { GameModals } from '@/app/components/slot-machine/GameModals';
 import { SymbolsPanel, PatternsPanel, PaytableModal } from '@/app/components/slot-machine/Paytable';
+import { RoundDifficultySelector } from '@/app/components/slot-machine/RoundDifficultySelector';
 
 export default function SlotMachine() {
   const { state, isSpinning, message, grid, winningCells, showLevelUp, setShowLevelUp, showDailyBonus, setShowDailyBonus, showCurse, toast, actions } = useSlotMachine();
@@ -201,6 +202,12 @@ export default function SlotMachine() {
       {/* Separated Modals */}
       <PhoneCallModal state={state} onSelect={actions.selectPhoneBonus} />
       
+      <RoundDifficultySelector 
+        open={state.showRoundSelector} 
+        onSelect={actions.startRound} 
+        roundNumber={state.round === 0 ? 1 : (state.showRoundSelector && state.round > 0 ? state.round + 1 : state.round)} 
+      />
+
       <GameModals 
          state={state} 
          showLevelUp={showLevelUp} 

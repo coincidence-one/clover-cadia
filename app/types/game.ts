@@ -101,6 +101,11 @@ export interface GameState {
   activeBonuses: string[];
   showPhoneModal: boolean;
   currentPhoneChoices: PhoneBonus[];
+
+  // v2.1 New Rules
+  showRoundSelector: boolean; // For choosing 3 vs 7 spins
+  mercyUsed: boolean; // Tracking 1 free spin if balance low
+  roundRewardTickets: number; // 2 for Risky, 1 for Safe
 }
 
 // ===== ROUND TYPES =====
@@ -117,9 +122,10 @@ export type PhoneBonusType = 'buff' | 'risk' | 'special';
 export interface PhoneBonus {
   id: string;
   name: string;
+  icon: string;
   desc: string;
-  type: PhoneBonusType;
-  rarity: number; // 1 (Common) to 3 (Rare)
+  type: 'buff' | 'risk' | 'special';
+  rarity: 'common' | 'rare' | 'legendary';
 }
 
 // ===== PAYLINE TYPE =====

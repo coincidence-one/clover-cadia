@@ -76,6 +76,7 @@ export const ko: Translations = {
 
   // Round System
   round: '라운드',
+  setup: '설정',
   goal: '목표',
   spinsLeft: '남은 스핀',
   roundCleared: '라운드 클리어!',

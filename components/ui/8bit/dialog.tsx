@@ -29,7 +29,10 @@ const DialogFooter = ShadcnDialogFooter;
 
 export interface BitDialogProps
   extends React.ComponentProps<"div">,
-    VariantProps<typeof dialogContentVariants> {}
+    VariantProps<typeof dialogContentVariants> {
+  onPointerDownOutside?: (e: any) => void;
+  onEscapeKeyDown?: (e: any) => void;
+}
 
 function DialogTitle({ ...props }: BitDialogProps) {
   const { className, font } = props;

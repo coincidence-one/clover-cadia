@@ -74,6 +74,7 @@ export interface Translations {
 
   // Round System
   round: string;
+  setup: string;
   goal: string;
   spinsLeft: string;
   roundCleared: string;
@@ -171,6 +172,7 @@ export const en: Translations = {
 
   // Round System
   round: 'ROUND',
+  setup: 'SETUP',
   goal: 'GOAL',
   spinsLeft: 'SPINS LEFT',
   roundCleared: 'ROUND CLEARED!',

@@ -52,10 +52,15 @@ export const INITIAL_GAME_STATE: GameState = {
   activeBonuses: [],
   showPhoneModal: false,
   currentPhoneChoices: [],
+
+  // v2.1
+  showRoundSelector: true, // Start game with selection
+  mercyUsed: false,
+  roundRewardTickets: 1,
 };
 
 // Storage key
 export const STORAGE_KEY = 'cloverCadiaState';
 
-// Fixed spin cost (CloverPit style - no betting)
-export const SPIN_COST = 10;
+// Spin Cost (Fixed)
+export const SPIN_COST = 8;

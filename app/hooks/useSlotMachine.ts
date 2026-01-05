@@ -102,28 +102,49 @@ export function useSlotMachine() {
   // ===== ACTIONS =====
 
   const spin = async () => {
-    // Check if can spin (use fixed SPIN_COST)
-    if (isSpinning || state.credits < SPIN_COST) {
-      playSound('error');
+    // Mercy Rule Check: If credits < cost, allow 1 free spin
+    const canAfford = state.credits >= SPIN_COST;
+    const isFreeSpin = state.bonusSpins > 0;
+    const isMercySpin = !canAfford && !state.mercyUsed && !isFreeSpin;
+
+    if (isSpinning || (!canAfford && !isFreeSpin && !isMercySpin)) {
+      if (!isSpinning && !canAfford) setToast('NO COINS! RESTART?');
       return;
     }
 
     setIsSpinning(true);
-    setWinningCells([]);
     setMessage('>>> SPINNING <<<');
-    playSound('spin');
+    setWinningCells([]);
+    setToast(null);
 
-    // Deduct spin cost (or use bonus spin) - BUT ALWAYS CONSUME SPINS LEFT (Deadline)
-    const useBonus = state.bonusSpins > 0;
+    // Apply Cost
+    let newCredits = state.credits;
+    let newBonusSpins = state.bonusSpins;
+    let newMercyUsed = state.mercyUsed;
 
-    // Decrement spins left
-    const newSpinsLeft = state.spinsLeft - 1;
-
-    if (!useBonus) {
-      updateState({ credits: state.credits - SPIN_COST, spinsLeft: newSpinsLeft });
+    if (isFreeSpin) {
+      newBonusSpins--;
+    } else if (isMercySpin) {
+      // Free spin provided by mercy
+      setToast('MERCY SPIN! (FREE)');
+      newMercyUsed = true;
     } else {
-      updateState({ bonusSpins: state.bonusSpins - 1, spinsLeft: newSpinsLeft });
+      // Normal spin
+      newCredits -= SPIN_COST;
+      // Reset mercy if we can afford again (logic: if we win this spin, we are back in game)
+      // Actually we set mercyUsed to false only when credits >= SPIN_COST?
+      // Let's reset it if newCredits >= SPIN_COST to handle edge cases, but mainly it resets on successful win
     }
+
+    // Decrease Spins Left (Deadline)
+    const newSpinsLeft = Math.max(0, state.spinsLeft - 1);
+
+    updateState({
+      credits: newCredits,
+      bonusSpins: newBonusSpins,
+      spinsLeft: newSpinsLeft,
+      mercyUsed: newMercyUsed
+    });
 
     // Check Game Over (if 0 spins left and not enough credits)
     // We check this AFTER win calculation usually, but spinsLeft hits 0 now.
@@ -235,7 +256,7 @@ export function useSlotMachine() {
 
     // Update state with results
     const currentState = stateRef.current; // Ref to get latest state during async
-    const newCredits = currentState.credits + totalWin;
+    newCredits = currentState.credits + totalWin; // Use updated newCredits
     const newTotalSpins = currentState.totalSpins + 1;
     const newTotalWins = totalWin > 0 ? currentState.totalWins + 1 : currentState.totalWins;
 
@@ -282,6 +303,11 @@ export function useSlotMachine() {
     if (newTotalSpins >= 100) unlockAchievement('spin100');
     if (newTotalSpins >= 500) unlockAchievement('spin500');
     if (newCredits >= 10000) unlockAchievement('rich');
+
+    // Reset Mercy if we profited (simple check: if credits now >= cost)
+    if (state.mercyUsed && newCredits >= SPIN_COST) {
+      updateState({ mercyUsed: false });
+    }
 
     setIsSpinning(false);
   };
@@ -445,60 +471,40 @@ export function useSlotMachine() {
     const bonus = PHONE_BONUSES.find(b => b.id === bonusId);
     if (!bonus) return;
 
-    const nextRoundNum = state.round + 1;
+    // Apply immediate credit bonuses if any (rare special)
+    // Then queue next round selection
+
+    updateState({
+      activeBonuses: [...state.activeBonuses, bonus.id],
+      showPhoneModal: false,
+      showRoundSelector: true, // Trigger Round Difficulty Selection
+    });
+
+    setToast(`${bonus.icon} ${bonus.name} SELECTED!`);
+  };
+
+  const startRound = (isRisky: boolean) => {
+    const nextRoundNum = state.round > 0 ? state.round + 1 : 1;
+    const spins = isRisky ? 3 : 7;
+    const tickets = isRisky ? 2 : 1;
+
+    // Get Round Config but override spins
     const config = getRoundConfig(nextRoundNum);
-
-    // Calculate deadline bonus (ticket logic)
-    const usedSpins = state.maxSpins - state.spinsLeft;
-    let extraTickets = 0;
-    if (usedSpins < state.maxSpins * 0.25) extraTickets = 2;
-    else if (usedSpins < state.maxSpins * 0.5) extraTickets = 1;
-    const currentConfig = getRoundConfig(state.round);
-    const baseTicketReward = currentConfig.rewardTickets + extraTickets;
-
-    // Accumulate Active Bonuses (Avoid duplicates if simple stat buff? Allow stack? Let's allow simple string list for now)
-    // If it's a one-time buff, don't add to activeBonuses list, just apply effect.
-    // If it's a permanent buff/risk, add to list.
-    const newActiveBonuses = [...state.activeBonuses];
-    if (bonus.type !== 'special' && !bonus.id.startsWith('buff_med_coin') && !bonus.id.startsWith('buff_small_coin') && !bonus.id.startsWith('buff_ticket') && !bonus.id.startsWith('buff_spin')) {
-      newActiveBonuses.push(bonus.id);
-    }
-
-    // Apply Immediate Effects
-    let bonusCoins = 0;
-    let bonusTickets = 0;
-    let bonusMaxSpins = 0;
-
-    switch (bonus.id) {
-      case 'buff_small_coin': bonusCoins = 200; break;
-      case 'buff_med_coin': bonusCoins = 500; break;
-      case 'buff_ticket': bonusTickets = 1; break;
-      case 'buff_spin_5': bonusMaxSpins = 5; break;
-      case 'risk_coin_greed':
-        bonusCoins = -Math.floor(state.credits * 0.5);
-        bonusMaxSpins = 10;
-        break;
-      case 'risk_glass_cannon': bonusMaxSpins = -5; break;
-    }
-
-    const finalTickets = state.tickets + baseTicketReward + bonusTickets;
-    const finalMaxSpins = config.maxSpins + bonusMaxSpins;
 
     updateState({
       round: nextRoundNum,
       currentGoal: config.goal,
-      spinsLeft: finalMaxSpins,
-      maxSpins: finalMaxSpins,
-      tickets: finalTickets,
-      credits: state.credits + bonusCoins, // Carry over credits + bonus
-      activeBonuses: newActiveBonuses,
-      showPhoneModal: false,
-      currentPhoneChoices: [],
+      spinsLeft: spins,
+      maxSpins: spins,
+      roundRewardTickets: tickets,
+      gameOver: false,
+      showRoundSelector: false,
+      // If Round 1, reset credits to initial 100? No, carry over or standard init.
+      // But if we are calling this from INITIAL_GAME_STATE, we are fine.
     });
 
-    playSound('levelup');
-    setToast(`ROUND ${nextRoundNum} START! ${bonus.name} APPLIED!`);
-    setTimeout(() => setToast(null), 3000);
+    playSound('start');
+    setMessage(`ROUND ${nextRoundNum} START!`);
   };
 
   const restartGame = () => {
@@ -534,6 +540,7 @@ export function useSlotMachine() {
       playSound,
       nextRound,
       selectPhoneBonus,
+      startRound,
       restartGame,
     },
   };
