@@ -76,6 +76,17 @@ export interface Translations {
     hotStreak: { name: string; desc: string };
     shield: { name: string; desc: string };
     wildCard: { name: string; desc: string };
+
+    // Ticket Items
+    luckyBell: { name: string; desc: string };
+    ticketDoubler: { name: string; desc: string };
+    coinMagnet: { name: string; desc: string };
+    scatterBoost: { name: string; desc: string };
+    sevenHunter: { name: string; desc: string };
+    crystalBall: { name: string; desc: string };
+    curseAbsorb: { name: string; desc: string };
+    instantJackpot: { name: string; desc: string };
+    rerollSpin: { name: string; desc: string };
   };
 
   // Achievements
@@ -173,6 +184,17 @@ export const en: Translations = {
     hotStreak: { name: 'HOT STREAK', desc: '+5 SPINS' },
     shield: { name: 'HOLY SHIELD', desc: 'BLOCK 666' },
     wildCard: { name: 'WILD CARD', desc: 'ADD WILD' },
+
+    // Ticket Items
+    luckyBell: { name: 'LUCKY BELL', desc: '+2% BELL CHANCE' },
+    ticketDoubler: { name: 'TICKET DOUBLER', desc: '2X TICKET REWARD' },
+    coinMagnet: { name: 'COIN MAGNET', desc: '+10% ROUND WINS' },
+    scatterBoost: { name: 'SCATTER BOOST', desc: 'Active: 2X SCATTER (5 SPINS)' },
+    sevenHunter: { name: 'SEVEN HUNTER', desc: 'Active: +5% SEVEN (3 SPINS)' },
+    crystalBall: { name: 'CRYSTAL BALL', desc: 'Active: PREVIEW NEXT SPIN' },
+    curseAbsorb: { name: 'CURSE ABSORB', desc: 'Consumable: 666 -> +3 TICKETS' },
+    instantJackpot: { name: 'MINI JACKPOT', desc: 'Consumable: +500 COINS' },
+    rerollSpin: { name: 'REROLL', desc: 'Consumable: REROLL LAST SPIN' },
   },
 
   // Achievements

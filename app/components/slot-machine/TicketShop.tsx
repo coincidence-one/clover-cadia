@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/8bit/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/8bit/dialog';
 import { TICKET_ITEMS, TICKET_ITEM_KEYS } from '@/app/constants';
 import type { GameState } from '@/app/types';
+import { useLocale } from '@/app/contexts/LocaleContext';
 
 interface TicketShopProps {
   state: GameState;
@@ -11,6 +12,15 @@ interface TicketShopProps {
 }
 
 export function TicketShop({ state, onBuy, shopTitle = "🎟️ TICKET SHOP" }: TicketShopProps) {
+  const { t } = useLocale();
+
+  const getItemTranslation = (key: string) => {
+    // Cast key to generic string to avoid overly strict type checking during development
+    // Since we just added the keys to en.ts/ko.ts, this safe access is simpler
+    const itemKey = key as keyof typeof t.items; 
+    return t.items[itemKey] || TICKET_ITEMS[key];
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -24,20 +34,21 @@ export function TicketShop({ state, onBuy, shopTitle = "🎟️ TICKET SHOP" }: 
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="text-center border-2 border-yellow-500 p-2 text-yellow-400 text-lg">
-            🎟️ TICKETS: {state.tickets}
+            🎟️ {t.tickets}: {state.tickets}
           </div>
           
           {/* Passive Items */}
-          <div className="text-center text-purple-400 text-xs border-b border-purple-400 pb-1">🟣 PASSIVE (PERMANENT)</div>
+          <div className="text-center text-purple-400 text-xs border-b border-purple-400 pb-1">🟣 {t.passiveLabel}</div>
           {TICKET_ITEM_KEYS.filter(k => TICKET_ITEMS[k].type === 'passive').map((key) => {
             const item = TICKET_ITEMS[key];
+            const trans = getItemTranslation(key);
             const owned = state.passiveEffects[key];
             return (
               <div key={key} className={`flex items-center justify-between bg-black p-2 border ${owned ? 'border-purple-400' : 'border-white'}`}>
                 <div className="text-2xl mr-3">{item.icon}</div>
                 <div className="flex-1">
-                  <div className="text-xs text-white">{item.name}</div>
-                  <div className="text-[10px] text-purple-400">{item.desc}</div>
+                  <div className="text-xs text-white">{trans.name}</div>
+                  <div className="text-[10px] text-purple-400">{trans.desc}</div>
                 </div>
                 {owned ? (
                   <span className="text-green-400 text-xs">✓ OWNED</span>
@@ -51,16 +62,17 @@ export function TicketShop({ state, onBuy, shopTitle = "🎟️ TICKET SHOP" }: 
           })}
 
           {/* Active Items */}
-          <div className="text-center text-green-400 text-xs border-b border-green-400 pb-1 mt-2">🟢 ACTIVE ({TICKET_ITEMS.scatterBoost.duration} SPINS)</div>
+          <div className="text-center text-green-400 text-xs border-b border-green-400 pb-1 mt-2">🟢 {t.activeLabel} ({TICKET_ITEMS.scatterBoost.duration} SPINS)</div>
           {TICKET_ITEM_KEYS.filter(k => TICKET_ITEMS[k].type === 'active').map((key) => {
             const item = TICKET_ITEMS[key];
+            const trans = getItemTranslation(key);
             const count = state.ticketItems[key] || 0;
             return (
               <div key={key} className="flex items-center justify-between bg-black p-2 border border-white">
                 <div className="text-2xl mr-3">{item.icon}</div>
                 <div className="flex-1">
-                  <div className="text-xs text-white">{item.name} <span className="text-green-400">x{count}</span></div>
-                  <div className="text-[10px] text-green-400">{item.desc}</div>
+                  <div className="text-xs text-white">{trans.name} <span className="text-green-400">x{count}</span></div>
+                  <div className="text-[10px] text-green-400">{trans.desc}</div>
                 </div>
                 <Button size="sm" onClick={() => onBuy(key)} disabled={state.tickets < item.price}>
                   🎟️{item.price}
@@ -70,16 +82,17 @@ export function TicketShop({ state, onBuy, shopTitle = "🎟️ TICKET SHOP" }: 
           })}
 
           {/* Consumable Items */}
-          <div className="text-center text-cyan-400 text-xs border-b border-cyan-400 pb-1 mt-2">🔵 CONSUMABLE (ONE-TIME)</div>
+          <div className="text-center text-cyan-400 text-xs border-b border-cyan-400 pb-1 mt-2">🔵 {t.consumableLabel}</div>
           {TICKET_ITEM_KEYS.filter(k => TICKET_ITEMS[k].type === 'consumable').map((key) => {
             const item = TICKET_ITEMS[key];
+            const trans = getItemTranslation(key);
             const count = state.ticketItems[key] || 0;
             return (
               <div key={key} className="flex items-center justify-between bg-black p-2 border border-white">
                 <div className="text-2xl mr-3">{item.icon}</div>
                 <div className="flex-1">
-                  <div className="text-xs text-white">{item.name} <span className="text-cyan-400">x{count}</span></div>
-                  <div className="text-[10px] text-cyan-400">{item.desc}</div>
+                  <div className="text-xs text-white">{trans.name} <span className="text-cyan-400">x{count}</span></div>
+                  <div className="text-[10px] text-cyan-400">{trans.desc}</div>
                 </div>
                 <Button size="sm" onClick={() => onBuy(key)} disabled={state.tickets < item.price}>
                   🎟️{item.price}

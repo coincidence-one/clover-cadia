@@ -78,6 +78,17 @@ export const ko: Translations = {
     hotStreak: { name: '핫 스트릭', desc: '+5 스핀' },
     shield: { name: '성스러운 방패', desc: '666 방어' },
     wildCard: { name: '와일드 카드', desc: '와일드 추가' },
+
+    // Ticket Items
+    luckyBell: { name: '행운의 종', desc: '종 확률 +2% (영구)' },
+    ticketDoubler: { name: '티켓 더블러', desc: '티켓 보상 2배 (영구)' },
+    coinMagnet: { name: '코인 자석', desc: '라운드 승리 코인 +10% (영구)' },
+    scatterBoost: { name: '스캐터 부스트', desc: '액티브: 스캐터 확률 2배 (5스핀)' },
+    sevenHunter: { name: '세븐 헌터', desc: '액티브: 7 확률 +5% (3스핀)' },
+    crystalBall: { name: '수정 구슬', desc: '액티브: 다음 결과 미리보기 (1스핀)' },
+    curseAbsorb: { name: '저주 흡수', desc: '소모품: 666 등장 시 티켓 3개로 변환' },
+    instantJackpot: { name: '미니 잭팟', desc: '소모품: 즉시 500 코인 획득' },
+    rerollSpin: { name: '리롤', desc: '소모품: 마지막 스핀 다시 돌리기' },
   },
 
   // Achievements
