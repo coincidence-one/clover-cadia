@@ -23,7 +23,6 @@ import {
   TICKET_ITEM_KEYS,
   getRoundConfig,
   ROUNDS,
-  MAX_ROUND,
   generatePhoneChoices,
   PHONE_BONUSES,
 } from '@/app/constants';
@@ -36,7 +35,6 @@ import {
   addWildToGrid,
   hasCurse,
   checkPatternWin,
-  checkPaylineWin,
   refreshTalismanShop,
 } from '@/app/utils/gameHelpers';
 
@@ -58,7 +56,11 @@ export function useSlotMachine() {
   const [toast, setToast] = useState<string | null>(null);
 
   const stateRef = useRef(state);
-  stateRef.current = state;
+
+  // Update ref when state changes
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Hydration
   useEffect(() => {
@@ -111,6 +113,7 @@ export function useSlotMachine() {
       const initialShop = refreshTalismanShop(3, []);
       setState({ ...INITIAL_GAME_STATE, shopTalismans: initialShop });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Daily bonus check
@@ -123,6 +126,7 @@ export function useSlotMachine() {
       updateState({ dailyStreak: newStreak });
       setShowDailyBonus(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ===== ACTIONS =====
@@ -712,17 +716,7 @@ export function useSlotMachine() {
   };
 
   // Apply interest when starting a new day/round
-  const applyInterest = () => {
-    if (state.bankDeposit <= 0) return 0;
-
-    const interest = Math.floor(state.bankDeposit * state.interestRate);
-    updateState({
-      bankDeposit: state.bankDeposit + interest,
-      totalInterestEarned: state.totalInterestEarned + interest,
-    });
-
-    return interest;
-  };
+  // Logic moved to startRound directly to handle UI/Toasts better
 
   const nextRound = () => {
     if (state.credits < state.currentGoal) return;
