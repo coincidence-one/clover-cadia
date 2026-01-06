@@ -29,6 +29,7 @@ export function GameGuideModal({ open, onClose }: GameGuideModalProps) {
   };
 
   // Reset page when opened
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (open) setPage(0);
   }, [open]);

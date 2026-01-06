@@ -48,7 +48,6 @@ export const TalismanShop = ({
   onPurchase,
   onReroll
 }: TalismanShopProps) => {
-  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState<'shop' | 'inventory'>('shop');
 
   // Helper to render card

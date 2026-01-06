@@ -1,14 +1,21 @@
+
 import React, { useState } from 'react';
 import { SYMBOLS, PATTERNS } from '@/app/constants';
 import { useLocale } from '@/app/contexts/LocaleContext';
-import { Badge } from '@/components/ui/8bit/badge';
 import { Button } from '@/components/ui/8bit/button';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/8bit/dialog';
 import { getDisplayProbabilities } from '@/app/utils/gameHelpers';
-import type { GameState } from '@/app/types';
+import type { GameState, GameSymbol } from '@/app/types';
+import type { Translations } from '@/app/locales';
+
+interface ProbabilityData {
+  current: number;
+  base: number;
+  changed: 'up' | 'down' | 'same';
+}
 
 // Rarity Helper
-const getRarity = (id: string, t: any) => {
+const getRarity = (id: string, t: Translations) => {
   switch (id) {
     case 'cherry':
     case 'lemon': return { label: t.common, color: 'text-stone-400' };
@@ -22,7 +29,7 @@ const getRarity = (id: string, t: any) => {
   }
 };
 
-const SymbolRow = ({ symbol, t, probability }: { symbol: any, t: any, probability?: any }) => {
+const SymbolRow = ({ symbol, t, probability }: { symbol: GameSymbol, t: Translations, probability?: ProbabilityData }) => {
   const rarity = getRarity(symbol.id, t);
   const basePayout = symbol.value > 0 ? symbol.value * 10 : 0;
   

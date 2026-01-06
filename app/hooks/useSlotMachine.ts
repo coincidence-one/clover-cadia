@@ -12,7 +12,6 @@ import {
   PATTERNS,
   ITEMS,
   TICKET_ITEMS,
-  TALISMANS,
   ACHIEVEMENTS,
   LEVELS,
   DAILY_REWARDS,
@@ -22,10 +21,10 @@ import {
   ITEM_KEYS,
   TICKET_ITEM_KEYS,
   getRoundConfig,
-  ROUNDS,
   generatePhoneChoices,
   PHONE_BONUSES,
 } from '@/app/constants';
+import { TALISMANS as TALISMANS_CONST } from '@/app/constants/talismans';
 
 // Utils
 import { audioEngine } from '@/app/utils/audio';
@@ -36,6 +35,7 @@ import {
   hasCurse,
   checkPatternWin,
   refreshTalismanShop,
+  generateRandomGrid,
 } from '@/app/utils/gameHelpers';
 
 // Re-export constants for component usage
@@ -48,12 +48,12 @@ export function useSlotMachine() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [message, setMessage] = useState('PRESS SPIN!');
   const [grid, setGrid] = useState<string[]>(getInitialGrid());
-  const [isHydrated, setIsHydrated] = useState(false);
   const [winningCells, setWinningCells] = useState<number[]>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showDailyBonus, setShowDailyBonus] = useState(false);
   const [showCurse, setShowCurse] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [reelSpinning, setReelSpinning] = useState<boolean[]>([false, false, false, false, false]);
 
   const stateRef = useRef(state);
 
@@ -63,8 +63,9 @@ export function useSlotMachine() {
   }, [state]);
 
   // Hydration
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    setIsHydrated(true);
+    // setIsHydrated(true); // Removed as unused
   }, []);
 
   // Helper: Update state
@@ -96,11 +97,16 @@ export function useSlotMachine() {
           parsed.shopRerollCost = parsed.shopRerollCost || 10;
         }
 
+        // Ensure nextGrid exists for legacy saves
+        if (!parsed.nextGrid) {
+          parsed.nextGrid = generateRandomGrid(parsed.activeBonuses, parsed.activeTicketEffects);
+        }
+
         // Merge with initial state to ensure new structure exists
         setState(prev => ({
           ...INITIAL_GAME_STATE,
           ...parsed,
-          activeBonuses: parsed.activeBonuses || [], // ensure array
+          activeBonuses: prev.activeBonuses // ensure array
         }));
       } catch (e) {
         console.error("Failed to parse game state", e);
@@ -111,7 +117,12 @@ export function useSlotMachine() {
     } else {
       // First time load
       const initialShop = refreshTalismanShop(3, []);
-      setState({ ...INITIAL_GAME_STATE, shopTalismans: initialShop });
+      const initialNextGrid = generateRandomGrid([], {});
+      setState({
+        ...INITIAL_GAME_STATE,
+        shopTalismans: initialShop,
+        nextGrid: initialNextGrid
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -131,33 +142,69 @@ export function useSlotMachine() {
 
   // ===== ACTIONS =====
 
-  const spin = async () => {
-    // 4. Entry Fee Model: Spins are pre-paid
-    if (isSpinning || state.spinsLeft <= 0) {
-      if (!isSpinning && state.spinsLeft <= 0) setToast('NO SPINS LEFT!');
-      return;
+  const addXP = useCallback((amount: number) => {
+    const newXP = state.xp + amount;
+    const nextLevel = LEVELS.find(l => l.level === state.level + 1);
+
+    if (nextLevel && newXP >= nextLevel.xp) {
+      const newLevel = state.level + 1;
+      const reward = newLevel * 100;
+      updateState({ credits: state.credits + reward, level: newLevel, xp: newXP });
+      playSound('levelup');
+      setShowLevelUp(true);
+    } else {
+      updateState({ xp: newXP });
+    }
+  }, [state.xp, state.level, state.credits, updateState, playSound]);
+
+  const unlockAchievement = useCallback((id: string) => {
+    if (state.achievements[id]) return;
+    const a = ACHIEVEMENTS.find(ac => ac.id === id);
+    if (!a) return;
+
+    const newAch = { ...state.achievements, [id]: true };
+    updateState({ achievements: newAch, credits: state.credits + a.reward });
+    playSound('levelup');
+    setToast(`${a.icon} ${a.name}!`);
+    setTimeout(() => setToast(null), 3000);
+  }, [state.achievements, state.credits, updateState, playSound]);
+
+  const spin = useCallback(async (isFreeRespin = false) => {
+    if (isSpinning) return;
+
+    // Check if can spin (cost or spins left)
+    // If free respin, ignore cost/spins check
+    if (!isFreeRespin) {
+      if (state.spinsLeft <= 0) {
+        setToast('NO SPINS LEFT!');
+        return;
+      }
     }
 
     setIsSpinning(true);
+    setReelSpinning([true, true, true, true, true]); // Start all reels
     setMessage('>>> SPINNING <<<');
     setWinningCells([]);
     setToast(null);
 
-    // Play coin insert sound effect
-    playSound('coin');
+    // Play spin sound effect
+    playSound('spin');
 
     // Apply Cost (No per-spin cost in Entry Fee model)
     let newCredits = state.credits;
-    let newBonusSpins = state.bonusSpins;
+    const newBonusSpins = state.bonusSpins;
 
-    // Decrease Spins Left (Deadline)
-    const newSpinsLeft = Math.max(0, state.spinsLeft - 1);
+    // Decrease Spins Left (Deadline) - ONLY IF NOT FREE
+    // Logic: Free spins (like Dynamo) don't consume "Day Spins"
+    const newSpinsLeft = isFreeRespin ? state.spinsLeft : Math.max(0, state.spinsLeft - 1);
 
-    updateState({
-      credits: newCredits,
-      bonusSpins: newBonusSpins,
-      spinsLeft: newSpinsLeft,
-    });
+    // We update state later to include nextGrid, but we need spinsLeft local var.
+
+    // updateState({
+    //   credits: newCredits,
+    //   bonusSpins: newBonusSpins,
+    //   spinsLeft: newSpinsLeft,
+    // });
 
     // Check Game Over (if 0 spins left and not enough credits)
     // We check this AFTER win calculation usually, but spinsLeft hits 0 now.
@@ -220,10 +267,10 @@ export function useSlotMachine() {
         if (curseBonus > 0) {
           // Get bonus coins instead of losing
           playSound('win');
-          const bonus = curseBonus + (state.curseCount * 10); // crystal skull adds curseCount * 10
-          setMessage(`😈 666 발동! +${bonus} 코인!`);
+          const bonusAmount = curseBonus + (state.curseCount * 10); // crystal skull adds curseCount * 10
+          setMessage(`😈 666 발동! +${bonusAmount} 코인!`);
           updateState({
-            credits: state.credits + bonus,
+            credits: state.credits + bonusAmount,
             curseCount: state.curseCount + 1
           });
         } else {
@@ -348,15 +395,26 @@ export function useSlotMachine() {
     if (newSpinsLeft <= 0 && newCredits < state.currentGoal) {
       if (state.currentDay < state.maxDays) {
         // Next Day available
+        if (state.ownedTalismans.includes('grandma_wallet')) {
+          newCredits += 30; // +30 from Grandma
+        }
+        if (state.ownedTalismans.includes('fake_coin')) {
+          newCredits += 10; // +10 from Fake Coin logic (implied per day?)
+          // Note: fake_coin usually start of round, but here it's "next day of round"
+          // Let's assume it triggers on any fresh start
+        }
+
         updateState({
           credits: newCredits,
           lastWin: totalWin,
           totalSpins: newTotalSpins,
           totalWins: newTotalWins,
+          bonusSpins: newBonusSpins,
           // Prepare next day
           currentDay: state.currentDay + 1,
           showRoundSelector: true,
           spinsLeft: 0,
+          tickets: state.tickets + (state.ownedTalismans.includes('fortune_cookie') ? 1 : 0),
         });
         setMessage(`DAY ${state.currentDay} END! PREPARE FOR DAY ${state.currentDay + 1}`);
         playSound('levelup'); // Alarm sound
@@ -384,6 +442,7 @@ export function useSlotMachine() {
       lastWin: totalWin,
       totalSpins: newTotalSpins,
       totalWins: newTotalWins,
+      spinsLeft: newSpinsLeft, // Update spinsLeft here
     });
 
     // Decrease active ticket item durations (counters)
@@ -428,30 +487,30 @@ export function useSlotMachine() {
     //   updateState({ mercyUsed: false });
     // }
 
-    setIsSpinning(false);
-  };
+    setIsSpinning(false); // Allow next spin
 
-  const addXP = (amount: number) => {
-    const newXP = state.xp + amount;
-    const nextLevel = LEVELS.find(l => l.level === state.level + 1);
-
-    if (nextLevel && newXP >= nextLevel.xp) {
-      const newLevel = state.level + 1;
-      const reward = newLevel * 100;
-      updateState({ credits: state.credits + reward, level: newLevel, xp: newXP });
-      playSound('levelup');
-      setShowLevelUp(true);
-    } else {
-      updateState({ xp: newXP });
+    // DYNAMO: Check for Respin
+    // Trigger if: Win occurred AND Dynamo owned AND 50% chance
+    if (totalWin > 0 && state.ownedTalismans.includes('dynamo')) {
+      if (Math.random() < 0.5) {
+        // Trigger Respin
+        setTimeout(() => {
+          setToast('⚡ 다이너모 발동! 무료 재굴림! ⚡');
+          playSound('levelup'); // Fixed sound
+          spin(true); // Recursive call with free flag
+        }, 1500);
+      }
     }
-  };
+  }, [isSpinning, state, updateState, playSound, addXP, unlockAchievement]);
+
+
 
   const useItem = (itemName: string) => {
     if (isSpinning || state.items[itemName] <= 0) return;
 
     const newItems = { ...state.items, [itemName]: state.items[itemName] - 1 };
     const newEffects = { ...state.activeEffects };
-    let newBonus = state.bonusSpins;
+    const newBonus = state.bonusSpins;
 
     switch (itemName) {
       case 'luckyCharm': newEffects.luckyCharm = 3; break;
@@ -507,7 +566,7 @@ export function useSlotMachine() {
 
   // ===== TALISMAN SYSTEM =====
   const purchaseTalisman = (talismanId: string) => {
-    const talisman = TALISMANS[talismanId];
+    const talisman = TALISMANS_CONST[talismanId];
     if (!talisman) {
       playSound('error');
       return;
@@ -538,10 +597,24 @@ export function useSlotMachine() {
     }
 
     // Deduct tickets and add to owned
+    // Implement One-Time Consumables (Lost Wallet)
+    if (talisman.id === 'lost_wallet') {
+      updateState({
+        credits: state.credits - talisman.price + 50, // Cost + 50 Reward
+        shopTalismans: state.shopTalismans.filter(id => id !== talismanId)
+      });
+      playSound('coin');
+      setToast(`${talisman.icon} ${talisman.name} 획득! +50 코인!`);
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+
+    // Normal Purchase
     const newTickets = state.tickets - talisman.price;
     const newOwned = [...state.ownedTalismans, talismanId];
+    const newShopList = state.shopTalismans.filter(id => id !== talismanId);
 
-    // Calculate new effects
+    // Calculate new active effects (Stackable ones)
     const effects = { ...state.talismanEffects };
 
     // Golden Series - Symbol Value Boost
@@ -556,31 +629,25 @@ export function useSlotMachine() {
     if (talismanId === 'rosary') effects.curseProtectionPermanent = true;
     if (talismanId === 'bible') effects.curseProtectionOnce = true;
 
-    // Coin bonuses
+    // Spin Coin bonuses (Stackable)
     if (talismanId === 'lucky_cat') effects.spinCoinBonus += 1;
     if (talismanId === 'fat_cat') effects.spinCoinBonus += 3;
-    if (talismanId === 'fake_coin') effects.roundStartBonus += 10;
-    if (talismanId === 'grandma_wallet') effects.deadlineClearBonus += 30;
 
-    // Probability
-    if (talismanId === 'clover_pot') effects.cloverProbBoost += 0.03;
-    if (talismanId === 'fortune_cookie') effects.ticketPerRound += 1;
+    // Note: Economy items (fake_coin, grandma_wallet) are handled via 'includes' check in hooks
+    // Probability items (clover_pot) handled via helper
 
     // 666 synergy
     if (talismanId === 'devil_horn') effects.curseBonus += 50;
-    if (talismanId === 'crystal_skull') effects.curseBonus += 10; // curseCount * 10
+    if (talismanId === 'crystal_skull') effects.curseBonus += 10;
 
     // Special
     if (talismanId === 'dynamo') effects.dynamoChance = 0.5;
 
-    // Remove from shop list after purchase
-    const newShopList = state.shopTalismans.filter(id => id !== talismanId);
-
     updateState({
       tickets: newTickets,
       ownedTalismans: newOwned,
-      talismanEffects: effects,
       shopTalismans: newShopList,
+      talismanEffects: effects
     });
 
     playSound('buy');
@@ -651,17 +718,7 @@ export function useSlotMachine() {
     setTimeout(() => setToast(null), 2000);
   };
 
-  const unlockAchievement = (id: string) => {
-    if (state.achievements[id]) return;
-    const a = ACHIEVEMENTS.find(ac => ac.id === id);
-    if (!a) return;
 
-    const newAch = { ...state.achievements, [id]: true };
-    updateState({ achievements: newAch, credits: state.credits + a.reward });
-    playSound('levelup');
-    setToast(`${a.icon} ${a.name}!`);
-    setTimeout(() => setToast(null), 3000);
-  };
 
   const claimDaily = () => {
     const today = new Date().toDateString();
@@ -799,7 +856,7 @@ export function useSlotMachine() {
     if (state.bankDeposit > 0) {
       const interest = Math.floor(state.bankDeposit * state.interestRate);
       if (interest > 0) {
-        // Use setTimeout to show interest toast after main update
+        // Use setTimeout to show interest
         setTimeout(() => {
           updateState({
             bankDeposit: stateRef.current.bankDeposit + interest,
@@ -828,6 +885,7 @@ export function useSlotMachine() {
   return {
     state,
     isSpinning,
+    reelSpinning, // Exported state
     message,
     grid,
     winningCells,
@@ -838,7 +896,7 @@ export function useSlotMachine() {
     showCurse,
     toast,
     actions: {
-      spin,
+      spin: () => spin(false),
       changeBet,
       useItem,
       buyItem,

@@ -116,6 +116,10 @@ export interface GameState {
   shopTalismans: string[]; // Current talismans available in shop
   talismanSlots: number; // Max talismans on table (default 7)
   shopRerollCost: number; // Cost to reroll shop (default 5 or 10)
+
+  // Crystal Ball
+  nextGrid?: string[];
+
   talismanEffects: {
     symbolValueBoosts: Record<string, number>; // Symbol ID -> value boost
     curseProtectionPermanent: boolean; // 묵주 (permanent 666 protection)

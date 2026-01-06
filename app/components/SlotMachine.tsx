@@ -1,10 +1,9 @@
 'use client';
 
 import React from 'react';
-import { useSlotMachine, ITEMS, ACHIEVEMENTS, LEVELS, ITEM_KEYS, PAYLINES, SPIN_COST } from '@/app/hooks/useSlotMachine';
+import { useSlotMachine, ACHIEVEMENTS, LEVELS, PAYLINES } from '@/app/hooks/useSlotMachine';
 import { useLocale } from '@/app/contexts/LocaleContext';
 import { Button } from '@/components/ui/8bit/button';
-import { Card } from '@/components/ui/8bit/card';
 import { Badge } from '@/components/ui/8bit/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/8bit/dialog';
 
@@ -17,15 +16,13 @@ import { SymbolsPanel, PatternsPanel, PaytableModal } from '@/app/components/slo
 import { RoundDifficultySelector } from '@/app/components/slot-machine/RoundDifficultySelector';
 import { GameGuideModal } from '@/app/components/slot-machine/GameGuideModal';
 import { TalismanShop } from '@/app/components/slot-machine/TalismanShop';
-import { ATM } from '@/app/components/slot-machine/ATM';
+import { ATM } from './slot-machine/ATM';
+import { CrystalBall } from './slot-machine/CrystalBall';
+import { Confetti } from './slot-machine/Confetti';
 
 export default function SlotMachine() {
-  const { state, isSpinning, message, grid, winningCells, showLevelUp, setShowLevelUp, showDailyBonus, setShowDailyBonus, showCurse, toast, actions } = useSlotMachine();
-  const { t, locale, toggleLocale } = useLocale();
-
-  const [showPaytable, setShowPaytable] = React.useState(false);
-  const [showTicketShop, setShowTicketShop] = React.useState(false);
-  const [showAchievements, setShowAchievements] = React.useState(false);
+  const { state, isSpinning, reelSpinning, message, grid, winningCells, showLevelUp, setShowLevelUp, showCurse, toast, actions } = useSlotMachine();
+  const { t, toggleLocale } = useLocale();
   const [showGuide, setShowGuide] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
@@ -60,9 +57,14 @@ export default function SlotMachine() {
   };
 
   return (
-    <div className={`relative min-h-screen bg-stone-900 text-green-400 font-pixel p-4 pb-safe flex flex-col items-center justify-center ${showCurse ? 'animate-pulse bg-red-900' : ''}`}>
+    <div className={`relative min-h-screen bg-stone-900 text-green-400 font-pixel p-4 pb-safe flex flex-col items-center justify-center ${showCurse ? 'animate-pulse bg-red-900' : ''} ${winningCells.length > 0 ? 'animate-shake' : ''}`}>
       {/* Scanlines Overlay */}
       <div className="pointer-events-none fixed inset-0 z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+
+      {/* VFX: Confetti */}
+      {winningCells.length > 0 && (
+         <Confetti count={state.lastWin >= state.bet * 10 ? 150 : 50} />
+      )}
 
       {/* Desktop Paytable Layout (Left & Right) */}
       <div className="hidden xl:block absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-all duration-500 will-change-transform">
@@ -197,19 +199,44 @@ export default function SlotMachine() {
              {PAYLINES.map((_, i) => <div key={i}>►</div>)}
         </div>
 
+        {/* Crystal Ball (Absolute Positioned) */}
+        {state.ownedTalismans.includes('crystal_ball') && (
+            <div className="absolute -top-20 -right-4 z-20 scale-75 md:scale-100 origin-bottom-right">
+              <CrystalBall grid={state.nextGrid} />
+            </div>
+        )}
+
         <div className="grid grid-cols-5 gap-1 bg-black p-1">
           {grid.map((cell, i) => {
+            const col = i % 5;
+            const isColSpinning = reelSpinning[col];
             const isWinning = winningCells.includes(i);
+            
             return (
               <div 
                 key={i} 
                 className={`
                   w-12 h-12 md:w-16 md:h-16 flex items-center justify-center text-3xl md:text-4xl bg-stone-900 border 
-                  ${isWinning ? 'border-yellow-400 bg-yellow-900/50 animate-bounce' : 'border-stone-700'}
-                  transition-all duration-100
+                  ${isColSpinning 
+                    ? 'border-stone-800 text-stone-600 blur-[2px] scale-90 translate-y-1' 
+                    : isWinning 
+                      ? 'border-yellow-400 bg-yellow-900/50 animate-bounce z-10' 
+                      : 'border-stone-700'
+                  }
+                  transition-all duration-100 overflow-hidden relative
                 `}
               >
-                {cell}
+                {/* Spin Blur Effect Layer */}
+                {isColSpinning && (
+                   <div className="absolute inset-0 bg-stone-800 flex items-center justify-center animate-pulse">
+                      <span className="blur-sm opacity-50 text-4xl">?</span>
+                   </div>
+                )}
+                
+                {/* Actual Symbol (Hidden or Blurred when spinning) */}
+                <span className={isColSpinning ? 'opacity-0' : 'opacity-100 scale-100 transition-transform duration-200'}>
+                   {cell}
+                </span>
               </div>
             );
           })}

@@ -19,23 +19,25 @@ const translations: Record<Locale, Translations> = { en, ko };
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>('ko');
 
+  // Move setLocale definition before useEffect
+  const setLocale = (newLocale: Locale) => {
+    setLocaleState(newLocale);
+    localStorage.setItem('pixelBetLocale', newLocale);
+  };
+
   // Load saved locale from localStorage
   useEffect(() => {
     // Load from storage
     const saved = localStorage.getItem('pixelBetLocale') as Locale;
     if (saved && (saved === 'en' || saved === 'ko')) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setLocale(saved);
     }
   }, []);
 
-  const setLocale = (newLocale: Locale) => {
-    setLocaleState(newLocale);
-  };
-
   const toggleLocale = () => {
     const newLocale = locale === 'en' ? 'ko' : 'en';
     setLocale(newLocale);
-    localStorage.setItem('pixelBetLocale', newLocale);
   };
 
   const value: LocaleContextType = {

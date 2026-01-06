@@ -27,7 +27,7 @@ export function symbolsMatch(a: string, b: string, wildIcon: string): boolean {
  */
 export function getActiveSymbols(
   activeBonuses: string[] = [],
-  activeTicketEffects: Record<string, any> = {}
+  activeTicketEffects: Record<string, number> = {}
 ): GameSymbol[] {
   // Clone symbols to avoid mutation
   const symbols = SYMBOLS.map(s => ({ ...s }));
@@ -82,13 +82,13 @@ export function getActiveSymbols(
  */
 export function getDisplayProbabilities(
   activeBonuses: string[] = [],
-  activeTicketEffects: Record<string, any> = {}
+  activeTicketEffects: Record<string, number> = {}
 ): Record<string, { current: number, base: number, changed: 'up' | 'down' | 'same' }> {
 
   const currentSymbols = getActiveSymbols(activeBonuses, activeTicketEffects);
   const totalWeight = currentSymbols.reduce((sum, s) => sum + s.probability, 0);
 
-  const result: Record<string, any> = {};
+  const result: Record<string, { current: number, base: number, changed: 'up' | 'down' | 'same' }> = {};
 
   SYMBOLS.forEach(baseSym => {
     const currentSym = currentSymbols.find(s => s.id === baseSym.id)!;
@@ -120,7 +120,7 @@ export function getDisplayProbabilities(
  */
 export function getWeightedRandomSymbol(
   activeBonuses: string[] = [],
-  activeTicketEffects: Record<string, any> = {}
+  activeTicketEffects: Record<string, number> = {}
 ): GameSymbol {
   const symbols = getActiveSymbols(activeBonuses, activeTicketEffects);
   const totalProb = symbols.reduce((sum, s) => sum + s.probability, 0);
@@ -147,7 +147,7 @@ export function getInitialGrid(): string[] {
 
 export function generateRandomGrid(
   activeBonuses: string[] = [],
-  activeTicketEffects: Record<string, any> = {}
+  activeTicketEffects: Record<string, number> = {}
 ): string[] {
   return Array(15).fill('').map(() =>
     getWeightedRandomSymbol(activeBonuses, activeTicketEffects).icon
