@@ -27,7 +27,7 @@ export function GameModals({ state, showLevelUp, setShowLevelUp, onNextRound, on
       </Dialog>
 
       {/* Round Clear Modal */}
-      <Dialog open={state.credits >= state.currentGoal && !state.gameOver} onOpenChange={() => {}}>
+      <Dialog open={state.credits >= state.currentGoal && !state.gameOver && state.round > 0} onOpenChange={() => {}}>
         <DialogContent className="bg-green-900 border-4 border-green-400 text-center pointer-events-auto">
           <DialogHeader>
             <DialogTitle className="text-yellow-400 text-2xl animate-bounce">🎉 ROUND CLEARED! 🎉</DialogTitle>
