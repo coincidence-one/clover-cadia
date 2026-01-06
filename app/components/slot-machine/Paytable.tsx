@@ -1,5 +1,5 @@
-import React from 'react';
-import { SYMBOLS, PAYLINES } from '@/app/constants';
+import React, { useState } from 'react';
+import { SYMBOLS, PAYLINES, PAYLINE_NAMES } from '@/app/constants';
 import { useLocale } from '@/app/contexts/LocaleContext';
 import { Badge } from '@/components/ui/8bit/badge';
 import { Button } from '@/components/ui/8bit/button';
@@ -84,6 +84,9 @@ export const SymbolsPanel = ({ state }: { state?: GameState }) => {
 
 export const PatternsPanel = () => {
   const { t } = useLocale();
+  const [page, setPage] = useState(0);
+  const ITEMS_PER_PAGE = 5;
+  const totalPages = Math.ceil(PAYLINES.length / ITEMS_PER_PAGE);
   
   // Create mini grid visualizer
   const renderMiniGrid = (pattern: number[]) => (
@@ -97,12 +100,15 @@ export const PatternsPanel = () => {
     </div>
   );
 
+  const currentPaylines = PAYLINES.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
+  const startIdx = page * ITEMS_PER_PAGE;
+
   return (
-    <div className="bg-stone-900/90 border-2 border-stone-600 p-2 w-48 text-stone-200">
+    <div className="bg-stone-900/90 border-2 border-stone-600 p-2 w-52 text-stone-200">
       <h3 className="text-center text-green-400 border-b-2 border-green-600 pb-1 mb-2">{t.patterns}</h3>
       
       {/* Match Multipliers */}
-      <div className="mb-4 bg-black/50 p-2 rounded border border-stone-700">
+      <div className="mb-3 bg-black/50 p-2 rounded border border-stone-700">
         <div className="text-[10px] text-center mb-1 text-stone-400">{t.multiplier}</div>
         <div className="flex justify-between text-xs">
           <div className="flex flex-col items-center">
@@ -125,17 +131,42 @@ export const PatternsPanel = () => {
       
       {/* Clarification Note */}
       <div className="text-[9px] text-yellow-400 text-center mb-2 bg-yellow-900/30 p-1 rounded border border-yellow-600/50">
-        ⚠️ 왼쪽부터 3개 이상 연속 일치 시 당첨!<br/>
-        (WIN if 3+ match from LEFT)
+        ⚠️ 왼쪽부터 3개 이상 연속 일치 시 당첨!
       </div>
 
-      <div className="space-y-3 h-[300px] overflow-y-auto pr-1 customize-scrollbar">
-        {PAYLINES.map((pattern, idx) => (
-          <div key={idx} className="flex items-center justify-between border-b border-stone-800 pb-1">
-            <span className="text-[10px] text-stone-500">LINE {idx + 1}</span>
-            {renderMiniGrid(pattern)}
-          </div>
-        ))}
+      {/* Paginated Patterns */}
+      <div className="space-y-2">
+        {currentPaylines.map((pattern, idx) => {
+          const globalIdx = startIdx + idx;
+          return (
+            <div key={globalIdx} className="flex items-center justify-between border-b border-stone-800 pb-1">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-green-400 font-bold">LINE {globalIdx + 1}</span>
+                <span className="text-[8px] text-stone-500">{PAYLINE_NAMES[globalIdx] || ''}</span>
+              </div>
+              {renderMiniGrid(pattern)}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-between items-center mt-3 text-[10px]">
+        <button 
+          onClick={() => setPage(p => Math.max(0, p - 1))}
+          disabled={page === 0}
+          className={`px-2 py-1 rounded ${page === 0 ? 'text-stone-600' : 'text-green-400 hover:bg-stone-700'}`}
+        >
+          ◀ Prev
+        </button>
+        <span className="text-stone-400">{page + 1} / {totalPages}</span>
+        <button 
+          onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+          disabled={page >= totalPages - 1}
+          className={`px-2 py-1 rounded ${page >= totalPages - 1 ? 'text-stone-600' : 'text-green-400 hover:bg-stone-700'}`}
+        >
+          Next ▶
+        </button>
       </div>
     </div>
   );
