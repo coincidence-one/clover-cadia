@@ -16,6 +16,7 @@ import { GameModals } from '@/app/components/slot-machine/GameModals';
 import { SymbolsPanel, PatternsPanel, PaytableModal } from '@/app/components/slot-machine/Paytable';
 import { RoundDifficultySelector } from '@/app/components/slot-machine/RoundDifficultySelector';
 import { GameGuideModal } from '@/app/components/slot-machine/GameGuideModal';
+import { TalismanShop } from '@/app/components/slot-machine/TalismanShop';
 
 export default function SlotMachine() {
   const { state, isSpinning, message, grid, winningCells, showLevelUp, setShowLevelUp, showDailyBonus, setShowDailyBonus, showCurse, toast, actions } = useSlotMachine();
@@ -106,6 +107,13 @@ export default function SlotMachine() {
             state={state} 
             onBuy={actions.buyTicketItem}
             shopTitle={t.shopTitle} 
+          />
+
+          {/* TalismanShop */}
+          <TalismanShop
+            tickets={state.tickets}
+            ownedTalismans={state.ownedTalismans}
+            onPurchase={actions.purchaseTalisman}
           />
 
           {/* Achievements Dialog */}

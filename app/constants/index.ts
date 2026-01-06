@@ -3,6 +3,7 @@ export * from './symbols';
 export * from './paylines';
 export * from './items';
 export * from './ticketItems';
+export * from './talismans';
 export * from './achievements';
 export * from './levels';
 export * from './gameState';

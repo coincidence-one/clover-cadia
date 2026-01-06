@@ -61,6 +61,21 @@ export const INITIAL_GAME_STATE: GameState = {
   // Deadline System
   currentDay: 1,
   maxDays: 3,
+
+  // Talisman System
+  ownedTalismans: [],
+  talismanEffects: {
+    symbolValueBoosts: {},
+    curseProtectionPermanent: false,
+    curseProtectionOnce: false,
+    spinCoinBonus: 0,
+    cloverProbBoost: 0,
+    roundStartBonus: 0,
+    deadlineClearBonus: 0,
+    ticketPerRound: 0,
+    curseBonus: 0,
+    dynamoChance: 0,
+  },
 };
 
 // Storage key

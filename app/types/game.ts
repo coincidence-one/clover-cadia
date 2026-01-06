@@ -110,6 +110,21 @@ export interface GameState {
   // Deadline System (New)
   currentDay: number; // 1, 2, 3
   maxDays: number; // 3
+
+  // Talisman System (부적)
+  ownedTalismans: string[]; // IDs of owned talismans
+  talismanEffects: {
+    symbolValueBoosts: Record<string, number>; // Symbol ID -> value boost
+    curseProtectionPermanent: boolean; // 묵주 (permanent 666 protection)
+    curseProtectionOnce: boolean; // 성경 (one-time 666 protection)
+    spinCoinBonus: number; // Coins per spin (행운의 고양이 etc)
+    cloverProbBoost: number; // Clover probability boost
+    roundStartBonus: number; // Coins at round start (가짜 동전)
+    deadlineClearBonus: number; // Coins on deadline clear (할머니의 지갑)
+    ticketPerRound: number; // Extra tickets per round (행운의 과자)
+    curseBonus: number; // Coins on 666 (악마의 뿔)
+    dynamoChance: number; // Respin chance on win (다이나모)
+  };
 }
 
 // ===== ROUND TYPES =====

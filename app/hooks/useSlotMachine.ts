@@ -12,6 +12,7 @@ import {
   PATTERNS,
   ITEMS,
   TICKET_ITEMS,
+  TALISMANS,
   ACHIEVEMENTS,
   LEVELS,
   DAILY_REWARDS,
@@ -430,6 +431,77 @@ export function useSlotMachine() {
     setTimeout(() => setToast(null), 2000);
   };
 
+  // ===== TALISMAN SYSTEM =====
+  const purchaseTalisman = (talismanId: string) => {
+    const talisman = TALISMANS[talismanId];
+    if (!talisman) {
+      playSound('error');
+      return;
+    }
+
+    // Check if already owned
+    if (state.ownedTalismans.includes(talismanId)) {
+      setToast('이미 보유중인 부적입니다!');
+      playSound('error');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+
+    // Check if can afford
+    if (state.tickets < talisman.price) {
+      setToast('티켓이 부족합니다!');
+      playSound('error');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+
+    // Deduct tickets and add to owned
+    const newTickets = state.tickets - talisman.price;
+    const newOwned = [...state.ownedTalismans, talismanId];
+
+    // Calculate new effects
+    const effects = { ...state.talismanEffects };
+
+    // Golden Series - Symbol Value Boost
+    if (talisman.targetSymbol && talisman.valueBoost) {
+      effects.symbolValueBoosts = {
+        ...effects.symbolValueBoosts,
+        [talisman.targetSymbol]: (effects.symbolValueBoosts[talisman.targetSymbol] || 0) + talisman.valueBoost,
+      };
+    }
+
+    // Protection items
+    if (talismanId === 'rosary') effects.curseProtectionPermanent = true;
+    if (talismanId === 'bible') effects.curseProtectionOnce = true;
+
+    // Coin bonuses
+    if (talismanId === 'lucky_cat') effects.spinCoinBonus += 1;
+    if (talismanId === 'fat_cat') effects.spinCoinBonus += 3;
+    if (talismanId === 'fake_coin') effects.roundStartBonus += 10;
+    if (talismanId === 'grandma_wallet') effects.deadlineClearBonus += 30;
+
+    // Probability
+    if (talismanId === 'clover_pot') effects.cloverProbBoost += 0.03;
+    if (talismanId === 'fortune_cookie') effects.ticketPerRound += 1;
+
+    // 666 synergy
+    if (talismanId === 'devil_horn') effects.curseBonus += 50;
+    if (talismanId === 'crystal_skull') effects.curseBonus += 10; // curseCount * 10
+
+    // Special
+    if (talismanId === 'dynamo') effects.dynamoChance = 0.5;
+
+    updateState({
+      tickets: newTickets,
+      ownedTalismans: newOwned,
+      talismanEffects: effects,
+    });
+
+    playSound('buy');
+    setToast(`${talisman.icon} ${talisman.name} 획득!`);
+    setTimeout(() => setToast(null), 2000);
+  };
+
   const useTicketItem = (itemName: string) => {
     if (isSpinning) return;
     const item = TICKET_ITEMS[itemName];
@@ -600,6 +672,7 @@ export function useSlotMachine() {
       buyItem,
       buyTicketItem,
       useTicketItem,
+      purchaseTalisman,
       claimDaily,
       playSound,
       nextRound,
