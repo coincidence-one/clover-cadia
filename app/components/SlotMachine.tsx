@@ -58,21 +58,17 @@ export default function SlotMachine() {
 
   return (
     <div className={`relative min-h-screen bg-stone-900 text-green-400 font-pixel p-4 pb-safe flex flex-col items-center justify-center overflow-x-hidden w-full ${showCurse ? 'animate-pulse bg-red-900' : ''} ${winningCells.length > 0 ? 'animate-shake' : ''}`}>
-      {/* Scanlines Overlay - Start z-30 to be below Modals (z-50) */}
-      <div className="pointer-events-none fixed inset-0 z-30 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+      {/* Scanlines Overlay - z-0 to be background level but above bg color */}
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+
+      {/* VFX: Confetti */}
 
       {/* VFX: Confetti */}
       {winningCells.length > 0 && (
          <Confetti count={state.lastWin >= state.bet * 10 ? 150 : 50} />
       )}
 
-      {/* Desktop Paytable Layout (Left & Right) */}
-      <div className="hidden xl:block absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-all duration-500 will-change-transform">
-        <SymbolsPanel state={state} />
-      </div>
-      <div className="hidden xl:block absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-all duration-500 will-change-transform">
-        <PatternsPanel />
-      </div>
+      {/* Panels moved to Flex Layout below */}
 
       {/* Top Bar - Row 1: Level & Buttons */}
       <div className="w-full max-w-2xl flex justify-between items-center mb-2 gap-1 md:gap-2">
@@ -183,8 +179,18 @@ export default function SlotMachine() {
         <p className="text-[10px] md:text-xs text-yellow-400 tracking-widest truncate">{t.subtitle}</p>
       </div>
 
-      {/* Round Info Bar */}
-      <RoundInfoBar state={state} />
+      {/* Main Content Area: Flex Row on Tablet+ */}
+      <div className="flex flex-col md:flex-row items-start justify-center gap-4 w-full max-w-7xl relative z-10">
+        
+        {/* Left Panel (Tablet+) */}
+        <div className="hidden md:block shrink-0 mt-20">
+           <SymbolsPanel state={state} />
+        </div>
+
+        {/* Game Center */}
+        <div className="flex flex-col items-center shrink-0">
+          {/* Round Info Bar */}
+          <RoundInfoBar state={state} />
 
       {/* Jackpot */}
       <div className="w-full max-w-lg bg-black border-4 border-double border-yellow-500 p-2 mb-4 text-center">
@@ -275,8 +281,16 @@ export default function SlotMachine() {
          </Button>
       </div>
 
-      {/* Spacer for mobile bottom safe area */}
-      <div className="h-4 md:h-0" />
+       {/* Spacer for mobile bottom safe area */}
+       <div className="h-4 md:h-0" />
+     </div> {/* End Game Center */}
+
+       {/* Right Panel (Tablet+) */}
+       <div className="hidden md:block shrink-0 mt-20">
+          <PatternsPanel />
+       </div>
+
+      </div> {/* End Main Content Flex */}
 
       {/* Toast Notification */}
       {toast && (
