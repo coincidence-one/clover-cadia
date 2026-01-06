@@ -14,11 +14,11 @@ export function RoundInfoBar({ state }: RoundInfoBarProps) {
             <div className="text-xl text-white">DAY {state.currentDay}/{state.maxDays}</div>
         </div>
 
-        {/* Goal Progress */}
-        <div className={`flex-1 border-2 p-2 text-center ${state.credits >= state.currentGoal ? 'bg-green-900 border-green-400 animate-pulse' : 'bg-black border-white'}`}>
-            <div className="text-[10px] text-gray-400">GOAL</div>
-            <div className={`text-xl ${state.credits >= state.currentGoal ? 'text-green-400' : 'text-white'}`}>
-                {state.currentGoal}
+        {/* Goal Progress - Updated to ATM Deposit */}
+        <div className={`flex-1 border-2 p-2 text-center ${state.bankDeposit >= state.currentGoal ? 'bg-green-900 border-green-400 animate-pulse' : 'bg-black border-white'}`}>
+            <div className="text-[10px] text-gray-400">ATM GOAL</div>
+            <div className={`text-xl ${state.bankDeposit >= state.currentGoal ? 'text-green-400' : 'text-white'}`}>
+                {state.bankDeposit} / {state.currentGoal}
             </div>
         </div>
 

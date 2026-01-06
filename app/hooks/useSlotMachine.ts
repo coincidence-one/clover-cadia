@@ -397,50 +397,9 @@ export function useSlotMachine() {
     const newTotalSpins = currentState.totalSpins + 1;
     const newTotalWins = totalWin > 0 ? currentState.totalWins + 1 : currentState.totalWins;
 
-    // Check Deadline Condition
-    if (newSpinsLeft <= 0 && newCredits < state.currentGoal) {
-      if (state.currentDay < state.maxDays) {
-        // Next Day available
-        if (state.ownedTalismans.includes('grandma_wallet')) {
-          newCredits += 30; // +30 from Grandma
-        }
-        if (state.ownedTalismans.includes('fake_coin')) {
-          newCredits += 10; // +10 from Fake Coin logic (implied per day?)
-          // Note: fake_coin usually start of round, but here it's "next day of round"
-          // Let's assume it triggers on any fresh start
-        }
-
-        updateState({
-          credits: newCredits,
-          lastWin: totalWin,
-          totalSpins: newTotalSpins,
-          totalWins: newTotalWins,
-          bonusSpins: newBonusSpins,
-          // Prepare next day
-          currentDay: state.currentDay + 1,
-          showRoundSelector: true,
-          spinsLeft: 0,
-          tickets: state.tickets + (state.ownedTalismans.includes('fortune_cookie') ? 1 : 0),
-        });
-        setMessage(`DAY ${state.currentDay} END! PREPARE FOR DAY ${state.currentDay + 1}`);
-        playSound('levelup'); // Alarm sound
-        setIsSpinning(false);
-        return;
-      } else {
-        // Final Day Failed -> GAME OVER
-        updateState({
-          credits: newCredits,
-          lastWin: totalWin,
-          totalSpins: newTotalSpins,
-          totalWins: newTotalWins,
-          gameOver: true
-        });
-        playSound('lose');
-        setMessage('☠️ GAME OVER - OUT OF TIME! ☠️');
-        setIsSpinning(false);
-        return;
-      }
-    }
+    // Check Deadline Condition - MOVED TO endDay() action
+    // We no longer check for Game Over here. We just update state.
+    // User must manually click "End Day" or "Pay Rent" button when spins are 0.
 
 
     updateState({
@@ -508,6 +467,91 @@ export function useSlotMachine() {
       }
     }
   }, [isSpinning, state, updateState, playSound, addXP, unlockAchievement]);
+
+  // New Action: End Day / Check Deadline
+  const endDay = useCallback(() => {
+    // 1. Check if spins are used (Optional, usually enforced)
+    if (state.spinsLeft > 0) {
+      setToast('남은 스핀을 모두 사용하세요!');
+      playSound('error');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+
+    // 2. Check if Final Day
+    if (state.currentDay >= state.maxDays) {
+      // LAST DAY: Check ATM Deposit vs Goal
+      if (state.bankDeposit >= state.currentGoal) {
+        // SUCCESS: Next Round logic
+
+        // Award reward tickets
+        const ticketsEarned = state.roundRewardTickets;
+        const newTickets = state.tickets + ticketsEarned;
+
+        // Bonus for extra savings? (Optional)
+        // const savingsBonus = Math.floor((state.bankDeposit - state.currentGoal) / 10);
+
+        if (ticketsEarned > 0) {
+          setToast(`🎟️ +${ticketsEarned} 티켓 획득!`);
+        }
+
+        const choices = generatePhoneChoices(state.round, false);
+        updateState({
+          tickets: newTickets,
+          showPhoneModal: true,
+          currentPhoneChoices: choices
+        });
+        playSound('jackpot');
+
+      } else {
+        // FAIL: Game Over
+        updateState({ gameOver: true });
+        playSound('lose');
+        setMessage('☠️ 납기일 초과! 추락했습니다 ☠️'); // Floor opens
+      }
+    } else {
+      // NOT LAST DAY: Proceed to Next Day
+      // Economy bonuses
+      let bonusCredits = 0;
+      if (state.ownedTalismans.includes('grandma_wallet')) bonusCredits += 30;
+      if (state.ownedTalismans.includes('fake_coin')) bonusCredits += 10;
+
+      // Bank Interest (Standard)
+      // Wait, interest is usually applied at start of new period
+      // Let's apply it here for simpler UX
+      const interest = Math.floor(state.bankDeposit * state.interestRate);
+      const newDeposit = state.bankDeposit + interest;
+
+      updateState({
+        credits: state.credits + bonusCredits,
+        bankDeposit: newDeposit,
+        currentDay: state.currentDay + 1,
+        showRoundSelector: true, // Let them pick Difficulty for NEXT Day? Or just refill spins?
+        // Usually "Difficulty" is per ROUND (3 Days). 
+        // The "RoundDifficultySelector" essentially Sets the Spins/Goal for the *Round*.
+        // So for Next Day within same Round, we just Refill Spins based on Current Config?
+        // My code previously showed `showRoundSelector: true`.
+        // But `RoundDifficultySelector` sets `currentGoal` (which is for the Whole Round).
+        // If we re-select, we might change Goal mid-round?
+        // "Round" in code = "3 Day Period".
+        // So we should just refill Spins.
+
+        // Wait, previous logic showed `showRoundSelector: true` (Line 421).
+        // Did I implement Per-Day Difficulty?
+        // Let's stick to previous behavior: Show Selector. 
+        // Maybe they pick "Safe/Risky" for TOMORROW's spins.
+        // Yes, user text implies "Deadline 5th period... each execution...".
+        // Let's allow selecting difficulty per day.
+
+        spinsLeft: 0, // Selector will set this
+        tickets: state.tickets + (state.ownedTalismans.includes('fortune_cookie') ? 1 : 0),
+      });
+      playSound('levelup');
+      setMessage(`DAY ${state.currentDay} COMPLETE!`);
+      if (interest > 0) setToast(`💰 이자 +${interest} 코인 (ATM)`);
+      setTimeout(() => setToast(null), 3000);
+    }
+  }, [state, updateState, playSound, generatePhoneChoices]);
 
 
 
@@ -912,6 +956,7 @@ export function useSlotMachine() {
       rerollTalismanShop,
       depositToBank,
       withdrawFromBank,
+      endDay,
       claimDaily,
       playSound,
       nextRound,
