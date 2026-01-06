@@ -42,10 +42,10 @@ export const INITIAL_GAME_STATE: GameState = {
   activeTicketEffects: {},
 
   // Deadline System
-  round: 1,
-  currentGoal: 300, // ROUNDS[0].goal
-  spinsLeft: 15,    // ROUNDS[0].maxSpins
-  maxSpins: 15,
+  round: 0,
+  currentGoal: 0,
+  spinsLeft: 0,
+  maxSpins: 0,
   gameOver: false,
 
   // Phone Bonus System
