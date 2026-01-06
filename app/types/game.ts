@@ -154,15 +154,16 @@ export interface RoundConfig {
 }
 
 // ===== PHONE BONUS TYPES =====
-export type PhoneBonusType = 'buff' | 'risk' | 'special';
+export type PhoneBonusType = 'buff' | 'risk' | 'special' | 'talisman' | 'talisman_slot' | 'spins';
 
 export interface PhoneBonus {
   id: string;
   name: string;
   icon: string;
   desc: string;
-  type: 'buff' | 'risk' | 'special';
+  type: PhoneBonusType;
   rarity: 'common' | 'rare' | 'legendary';
+  value?: string | number;
 }
 
 // ===== PAYLINE TYPE =====
