@@ -122,6 +122,12 @@ export const PatternsPanel = () => {
           (Base Value × Multiplier)
         </div>
       </div>
+      
+      {/* Clarification Note */}
+      <div className="text-[9px] text-yellow-400 text-center mb-2 bg-yellow-900/30 p-1 rounded border border-yellow-600/50">
+        ⚠️ 왼쪽부터 3개 이상 연속 일치 시 당첨!<br/>
+        (WIN if 3+ match from LEFT)
+      </div>
 
       <div className="space-y-3 h-[300px] overflow-y-auto pr-1 customize-scrollbar">
         {PAYLINES.map((pattern, idx) => (
