@@ -45,7 +45,9 @@ const SymbolRow = ({ symbol, t, probability }: { symbol: any, t: any, probabilit
         </div>
       </div>
       <div className="text-right">
-        <div className="text-yellow-400">{basePayout > 0 ? basePayout : '???'}</div>
+        <div className="text-yellow-400 font-bold">
+          {symbol.value > 0 ? `×${symbol.value}` : (symbol.id === 'six' ? <span className="text-red-500">저주</span> : '???')}
+        </div>
       </div>
     </div>
   );

@@ -1,16 +1,41 @@
 import type { GameSymbol } from '@/app/types';
 
-// CloverPit-style probabilities
-// Cherry/Lemon(19.4%), Clover/Bell(14.9%), Diamond/Treasure(11.9%), Seven(7.5%), Six(1.5%)
+/**
+ * CloverPit Symbol System
+ * 
+ * | Symbol      | Value | Probability | Rarity    |
+ * |-------------|-------|-------------|-----------|
+ * | 체리/레몬   | ×2    | 19.4%       | Common    |
+ * | 클로버/종   | ×3    | 14.9%       | Uncommon  |
+ * | 다이아/보물 | ×5    | 11.9%       | Rare      |
+ * | 세븐        | ×7    | 7.5%        | Legendary |
+ * | 6           | -     | 1.5%        | Cursed    |
+ * 
+ * Win Calculation: symbol.value × pattern.multiplier × 10 (base)
+ */
 export const SYMBOLS: GameSymbol[] = [
-  { id: 'cherry', icon: '🍒', probability: 0.194, value: 4 }, // Was 2
-  { id: 'lemon', icon: '🍋', probability: 0.194, value: 4 },  // Was 2
-  { id: 'clover', icon: '☘️', probability: 0.149, value: 8 }, // Was 5
-  { id: 'bell', icon: '🔔', probability: 0.149, value: 8 },   // Was 5
-  { id: 'diamond', icon: '💎', probability: 0.119, value: 15 }, // Was 10
-  { id: 'treasure', icon: '💰', probability: 0.119, value: 15 }, // Was 10
-  { id: 'seven', icon: '7️⃣', probability: 0.075, value: 40 }, // Was 25
-  { id: 'six', icon: '6️⃣', probability: 0.015, value: -1 }, // Curse symbol
+  // Common (19.4% each)
+  { id: 'cherry', icon: '🍒', probability: 0.194, value: 2 },
+  { id: 'lemon', icon: '🍋', probability: 0.194, value: 2 },
+
+  // Uncommon (14.9% each)
+  { id: 'clover', icon: '☘️', probability: 0.149, value: 3 },
+  { id: 'bell', icon: '🔔', probability: 0.149, value: 3 },
+
+  // Rare (11.9% each)
+  { id: 'diamond', icon: '💎', probability: 0.119, value: 5 },
+  { id: 'treasure', icon: '💰', probability: 0.119, value: 5 },
+
+  // Legendary (7.5%)
+  { id: 'seven', icon: '7️⃣', probability: 0.075, value: 7 },
+
+  // Cursed (1.5%) - 666 triggers curse (lose all coins this round)
+  { id: 'six', icon: '6️⃣', probability: 0.015, value: 0 },
 ];
 
-export const WILD_SYMBOL = { id: 'wild', icon: '🃏', probability: 0, value: 0 };
+export const WILD_SYMBOL: GameSymbol = {
+  id: 'wild',
+  icon: '🃏',
+  probability: 0,
+  value: 0
+};
