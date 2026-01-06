@@ -116,6 +116,9 @@ export function useSlotMachine() {
     setWinningCells([]);
     setToast(null);
 
+    // Play coin insert sound effect
+    playSound('coin');
+
     // Apply Cost (No per-spin cost in Entry Fee model)
     let newCredits = state.credits;
     let newBonusSpins = state.bonusSpins;
@@ -158,23 +161,55 @@ export function useSlotMachine() {
 
     // Check for 666 curse
     if (hasCurse(newGrid)) {
-      // Check for Shield (in Ticket Items inventory)
-      if ((state.ticketItems['shield'] || 0) > 0) {
+      // Check for Talisman protection first (Rosary = permanent, Bible = one-time)
+      const hasPermanentProtection = state.talismanEffects.curseProtectionPermanent;
+      const hasOnceProtection = state.talismanEffects.curseProtectionOnce;
+
+      if (hasPermanentProtection) {
+        // Rosary blocks curse (permanent)
+        playSound('win');
+        setMessage('📿 묵주가 666을 방어했습니다!');
+        unlockAchievement('survivor');
+      } else if (hasOnceProtection) {
+        // Bible blocks curse (consume once)
+        playSound('win');
+        setMessage('📖 성경이 666을 1회 방어했습니다!');
+        updateState({
+          talismanEffects: {
+            ...state.talismanEffects,
+            curseProtectionOnce: false
+          }
+        });
+        unlockAchievement('survivor');
+      } else if ((state.ticketItems['shield'] || 0) > 0) {
         // Shield blocks curse (Consume 1 shield)
         playSound('win');
         setMessage('✝️ SHIELD BLOCKED 666!');
         updateState({ ticketItems: { ...state.ticketItems, shield: state.ticketItems['shield'] - 1 } });
         unlockAchievement('survivor');
       } else {
-        // Curse triggers
-        playSound('curse');
-        setShowCurse(true);
-        setMessage('☠️ 666 CURSE! ALL COINS LOST!');
-        setTimeout(() => setShowCurse(false), 2000);
-        updateState({ credits: 0 });
-        unlockAchievement('cursed');
-        setIsSpinning(false);
-        return;
+        // Check for curse bonus (악마의 뿔)
+        const curseBonus = state.talismanEffects.curseBonus;
+        if (curseBonus > 0) {
+          // Get bonus coins instead of losing
+          playSound('win');
+          const bonus = curseBonus + (state.curseCount * 10); // crystal skull adds curseCount * 10
+          setMessage(`😈 666 발동! +${bonus} 코인!`);
+          updateState({
+            credits: state.credits + bonus,
+            curseCount: state.curseCount + 1
+          });
+        } else {
+          // Curse triggers - lose all
+          playSound('curse');
+          setShowCurse(true);
+          setMessage('☠️ 666 CURSE! ALL COINS LOST!');
+          setTimeout(() => setShowCurse(false), 2000);
+          updateState({ credits: 0, curseCount: state.curseCount + 1 });
+          unlockAchievement('cursed');
+          setIsSpinning(false);
+          return;
+        }
       }
     }
 
@@ -229,7 +264,10 @@ export function useSlotMachine() {
       }
 
       // Win = symbol value × pattern multiplier × base (10)
-      let patternWin = mp.symbolObj.value * mp.pattern.multiplier * 10;
+      // Apply golden talisman symbol value boost
+      const symbolBoost = state.talismanEffects.symbolValueBoosts[mp.symbolObj.id] || 0;
+      const boostedValue = mp.symbolObj.value + symbolBoost;
+      let patternWin = boostedValue * mp.pattern.multiplier * 10;
 
       // Apply Glass Cannon Risk (All wins x1.5)
       if (state.activeBonuses.includes('risk_glass_cannon')) {
@@ -243,7 +281,10 @@ export function useSlotMachine() {
     // Step 4: Add jackpot bonus AFTER all other patterns
     if (jackpotMatch !== null) {
       const jp = jackpotMatch as MatchedPattern;
-      let jackpotWin = jp.symbolObj.value * jp.pattern.multiplier * 10;
+      // Apply golden talisman boost to jackpot symbol too
+      const jpSymbolBoost = state.talismanEffects.symbolValueBoosts[jp.symbolObj.id] || 0;
+      const jpBoostedValue = jp.symbolObj.value + jpSymbolBoost;
+      let jackpotWin = jpBoostedValue * jp.pattern.multiplier * 10;
       if (state.activeBonuses.includes('risk_glass_cannon')) {
         jackpotWin = Math.floor(jackpotWin * 1.5);
       }
@@ -260,6 +301,12 @@ export function useSlotMachine() {
     // Apply coin magnet passive
     if (totalWin > 0 && state.passiveEffects.coinMagnet) {
       totalWin = Math.floor(totalWin * 1.1);
+    }
+
+    // Apply talisman spin coin bonus (행운의 고양이, 떡떡한 고양이)
+    const spinCoinBonus = state.talismanEffects.spinCoinBonus;
+    if (spinCoinBonus > 0) {
+      totalWin += spinCoinBonus;
     }
 
     setWinningCells([...new Set(allWinningCells)]);

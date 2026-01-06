@@ -1,7 +1,7 @@
 // Audio Engine for chiptune sound effects
 // Uses Web Audio API to generate 8-bit style sounds
 
-export type SoundType = 'spin' | 'win' | 'jackpot' | 'lose' | 'click' | 'buy' | 'error' | 'levelup' | 'curse' | 'start';
+export type SoundType = 'spin' | 'win' | 'jackpot' | 'lose' | 'click' | 'buy' | 'error' | 'levelup' | 'curse' | 'start' | 'coin';
 
 export class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -117,6 +117,19 @@ export class AudioEngine {
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.5);
+        break;
+
+      case 'coin':
+        // Classic coin insert sound - metallic clink
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1200, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.05);
+        osc.frequency.setValueAtTime(1000, ctx.currentTime + 0.06);
+        osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.15);
         break;
     }
   }
