@@ -291,7 +291,7 @@ export default function SlotMachine() {
           ) : (
              <Button 
                className={`w-full h-16 text-2xl tracking-widest ${isSpinning ? 'bg-stone-700' : 'bg-red-600 hover:bg-red-500'} border-b-4 border-red-800 active:border-b-0 active:mt-1`}
-               onClick={actions.spin}
+               onClick={() => actions.spin()}
                disabled={isSpinning}
              >
                {isSpinning ? '...' : state.bonusSpins > 0 ? `FREE SPIN (${state.bonusSpins})` : `SPIN`}

@@ -139,69 +139,30 @@ export function useSlotMachine() {
         window.location.reload();
       }
     },
-    selectPhoneBonus: (choiceIdx: number) => {
-      const choice = state.currentPhoneChoices[choiceIdx];
+    selectPhoneBonus: (id: string) => {
+      const choice = state.currentPhoneChoices.find(c => c.id === id);
       if (!choice) return;
 
-      if (choice.type === 'talisman_slot') {
-        updateState({
-          talismanSlots: state.talismanSlots + 1,
-          showPhoneModal: false
-        });
-        setToast('부적 슬롯 +1 확장!');
-      } else if (choice.type === 'talisman') {
-        // Add Talisman
-        // Check slot? Phone bonus usually ignores slot limit or overrides?
-        // Let's enforce limit or allow overflow?
-        // User text implies phone can change max slot count.
-        // For now just add to owned.
-        const newOwned = [...state.ownedTalismans, choice.value];
-        updateState({ ownedTalismans: newOwned, showPhoneModal: false });
-        setToast('새로운 부적 획득!');
-      } else if (choice.type === 'spins') {
-        // Add max spins for NEXT rounds? Or current?
-        // Usually adds to maxSpins base
-      }
-
-      // Simple impl for now based on existing logic (which was missing in monolithic file?)
-      // Wait, selectPhoneBonus WAS in monolithic file but I might have missed copying it to a hook.
-      // Let's verify if I missed functionality.
-      // Logic 786-820 in monolithic.
-
-      // It should handle:
-      // 1. Apply effect
-      // 2. Close modal
-      // 3. Start Next Round (Reset spins, goal, day=1)
-
-      // I missed moving this to useRoundSystem or keeping it here.
-      // I'll implement it right here for now or add to RoundSystem later.
-
-      // ... Implementation of Phone Bonus ...
       let newOwned = [...state.ownedTalismans];
       let newSlots = state.talismanSlots;
 
       if (choice.type === 'talisman') {
-        newOwned.push(choice.value);
+        newOwned.push(choice.value as string);
+        setToast('새로운 부적 획득!');
       } else if (choice.type === 'talisman_slot') {
         newSlots += 1;
+        setToast('부적 슬롯 +1 확장!');
       }
 
-      // Setup NEXT ROUND
-      const nextRoundNum = state.round + 1;
-      // Difficulty is set by RoundDifficultySelector usually.
-      // But here we just reset for the new round context.
-
       updateState({
-        round: nextRoundNum,
+        round: state.round + 1,
         currentDay: 1,
         ownedTalismans: newOwned,
         talismanSlots: newSlots,
         showPhoneModal: false,
-        showRoundSelector: true, // Let user pick difficulty for Round 2
-        spinsLeft: 0, // Will be set by Selector
-        bankDeposit: state.bankDeposit // Keep deposit? Yes.
+        showRoundSelector: true,
+        spinsLeft: 0,
       });
-
       playSound('genie');
     },
     startRound: (config: any) => { // config: { spins, cost, rewardTickets }

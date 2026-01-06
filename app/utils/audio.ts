@@ -1,7 +1,7 @@
 // Audio Engine for chiptune sound effects
 // Uses Web Audio API to generate 8-bit style sounds
 
-export type SoundType = 'spin' | 'win' | 'jackpot' | 'lose' | 'click' | 'buy' | 'error' | 'levelup' | 'curse' | 'start' | 'coin';
+export type SoundType = 'spin' | 'win' | 'jackpot' | 'lose' | 'click' | 'buy' | 'error' | 'levelup' | 'curse' | 'start' | 'coin' | 'genie';
 
 export class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -130,6 +130,19 @@ export class AudioEngine {
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.15);
+        break;
+
+      case 'genie':
+        // Magical sweep
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(800, ctx.currentTime + 0.3);
+        osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.6);
+        gain.gain.setValueAtTime(0.0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.3);
+        gain.gain.linearRampToValueAtTime(0.0, ctx.currentTime + 0.6);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.6);
         break;
     }
   }
