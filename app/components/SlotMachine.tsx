@@ -57,9 +57,9 @@ export default function SlotMachine() {
   };
 
   return (
-    <div className={`relative min-h-screen bg-stone-900 text-green-400 font-pixel p-4 pb-safe flex flex-col items-center justify-center ${showCurse ? 'animate-pulse bg-red-900' : ''} ${winningCells.length > 0 ? 'animate-shake' : ''}`}>
-      {/* Scanlines Overlay */}
-      <div className="pointer-events-none fixed inset-0 z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+    <div className={`relative min-h-screen bg-stone-900 text-green-400 font-pixel p-4 pb-safe flex flex-col items-center justify-center overflow-x-hidden w-full ${showCurse ? 'animate-pulse bg-red-900' : ''} ${winningCells.length > 0 ? 'animate-shake' : ''}`}>
+      {/* Scanlines Overlay - Start z-30 to be below Modals (z-50) */}
+      <div className="pointer-events-none fixed inset-0 z-30 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
 
       {/* VFX: Confetti */}
       {winningCells.length > 0 && (
@@ -82,8 +82,8 @@ export default function SlotMachine() {
           <span className="hidden md:inline">{currentLevel.rank} {t.level}{state.level}</span>
         </Badge>
         
-        {/* Buttons Group */}
-        <div className="flex gap-1 md:gap-2 shrink-0">
+        {/* Buttons Group - Scrollable on mobile */}
+        <div className="flex gap-1 md:gap-2 overflow-x-auto no-scrollbar pb-1 max-w-[200px] md:max-w-none items-center">
            <Button
             variant="outline"
             size="sm"
@@ -199,9 +199,9 @@ export default function SlotMachine() {
              {PAYLINES.map((_, i) => <div key={i}>►</div>)}
         </div>
 
-        {/* Crystal Ball (Absolute Positioned) */}
+        {/* Crystal Ball (Absolute Positioned - Centered on Mobile to prevent overflow, Right on Desktop) */}
         {state.ownedTalismans.includes('crystal_ball') && (
-            <div className="absolute -top-20 -right-4 z-20 scale-75 md:scale-100 origin-bottom-right">
+            <div className="absolute -top-24 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:-top-20 md:-right-4 z-20 scale-75 md:scale-100 origin-bottom md:origin-bottom-right">
               <CrystalBall grid={state.nextGrid} />
             </div>
         )}
@@ -218,7 +218,7 @@ export default function SlotMachine() {
                 className={`
                   w-12 h-12 md:w-16 md:h-16 flex items-center justify-center text-3xl md:text-4xl bg-stone-900 border 
                   ${isColSpinning 
-                    ? 'border-stone-800 text-stone-600 blur-[2px] scale-90 translate-y-1' 
+                    ? 'border-stone-800 text-stone-600 blur-[3px] scale-90 translate-y-1 opacity-70' 
                     : isWinning 
                       ? 'border-yellow-400 bg-yellow-900/50 animate-bounce z-10' 
                       : 'border-stone-700'
@@ -228,8 +228,8 @@ export default function SlotMachine() {
               >
                 {/* Spin Blur Effect Layer */}
                 {isColSpinning && (
-                   <div className="absolute inset-0 bg-stone-800 flex items-center justify-center animate-pulse">
-                      <span className="blur-sm opacity-50 text-4xl">?</span>
+                   <div className="absolute inset-0 bg-stone-900/90 flex items-center justify-center animate-pulse z-20">
+                      <span className="blur-[1px] opacity-80 text-4xl text-green-900">?</span>
                    </div>
                 )}
                 

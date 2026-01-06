@@ -65,7 +65,7 @@ export const SymbolsPanel = ({ state }: { state?: GameState }) => {
   const probs = state ? getDisplayProbabilities(state.activeBonuses, state.activeTicketEffects) : null;
 
   return (
-    <div className="bg-stone-900/90 border-2 border-stone-600 p-2 w-48 text-stone-200">
+    <div className="bg-stone-900/90 border-2 border-stone-600 p-2 w-full max-w-[280px] text-stone-200">
       <h3 className="text-center text-yellow-400 border-b-2 border-yellow-600 pb-1 mb-2">{t.symbols}</h3>
       <div className="flex justify-between text-[10px] text-stone-500 mb-1 px-1">
         <span>TYPE / PROB</span>
@@ -113,7 +113,7 @@ export const PatternsPanel = () => {
   const startIdx = page * ITEMS_PER_PAGE;
 
   return (
-    <div className="bg-stone-900/90 border-2 border-stone-600 p-2 w-56 text-stone-200">
+    <div className="bg-stone-900/90 border-2 border-stone-600 p-2 w-full max-w-[280px] text-stone-200">
       <h3 className="text-center text-green-400 border-b-2 border-green-600 pb-1 mb-2">{t.patterns}</h3>
       
       {/* Clarification Note - CloverPit Style */}
@@ -171,9 +171,9 @@ export const PaytableModal = ({ state }: { state?: GameState }) => {
           ℹ️ {t.paytableTitle}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl bg-stone-900 border-4 border-stone-500 text-white max-h-[80vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-3xl bg-stone-900 border-4 border-stone-500 text-white max-h-[85vh] overflow-y-auto p-4 md:p-6">
         <DialogTitle className="sr-only">{t.paytableTitle}</DialogTitle>
-        <div className="flex flex-col md:flex-row gap-4 justify-center items-start pt-4">
+        <div className="flex flex-col md:flex-row gap-6 justify-center items-center md:items-start pt-2">
           <SymbolsPanel state={state} />
           <PatternsPanel />
         </div>
