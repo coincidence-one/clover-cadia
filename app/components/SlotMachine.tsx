@@ -224,7 +224,7 @@ export default function SlotMachine() {
                 className={`
                   w-12 h-12 md:w-16 md:h-16 flex items-center justify-center text-3xl md:text-4xl bg-stone-900 border 
                   ${isColSpinning 
-                    ? 'border-stone-800 text-stone-600 blur-[3px] scale-90 translate-y-1 opacity-70' 
+                    ? 'border-stone-800 text-stone-600 blur-[2px] scale-90 translate-y-1' 
                     : isWinning 
                       ? 'border-yellow-400 bg-yellow-900/50 animate-bounce z-10' 
                       : 'border-stone-700'
@@ -234,8 +234,8 @@ export default function SlotMachine() {
               >
                 {/* Spin Blur Effect Layer */}
                 {isColSpinning && (
-                   <div className="absolute inset-0 bg-stone-900/90 flex items-center justify-center animate-pulse z-20">
-                      <span className="blur-[1px] opacity-80 text-4xl text-green-900">?</span>
+                   <div className="absolute inset-0 bg-stone-900/60 flex items-center justify-center animate-pulse z-20">
+                      <span className="blur-[1px] text-4xl text-yellow-500 font-bold">?</span>
                    </div>
                 )}
                 
