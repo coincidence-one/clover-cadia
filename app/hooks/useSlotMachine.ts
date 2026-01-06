@@ -623,19 +623,74 @@ export function useSlotMachine() {
     playSound('click');
   };
 
+  // ===== ATM SYSTEM =====
+  const depositToBank = (amount: number) => {
+    if (amount <= 0 || amount > state.credits) {
+      playSound('error');
+      return;
+    }
+
+    updateState({
+      credits: state.credits - amount,
+      bankDeposit: state.bankDeposit + amount,
+    });
+
+    playSound('coin');
+    setToast(`🏧 ${amount} 코인 입금 완료!`);
+    setTimeout(() => setToast(null), 2000);
+  };
+
+  const withdrawFromBank = (amount: number) => {
+    if (amount <= 0 || amount > state.bankDeposit) {
+      playSound('error');
+      return;
+    }
+
+    updateState({
+      credits: state.credits + amount,
+      bankDeposit: state.bankDeposit - amount,
+    });
+
+    playSound('buy');
+    setToast(`🏧 ${amount} 코인 출금 완료!`);
+    setTimeout(() => setToast(null), 2000);
+  };
+
+  // Apply interest when starting a new day/round
+  const applyInterest = () => {
+    if (state.bankDeposit <= 0) return 0;
+
+    const interest = Math.floor(state.bankDeposit * state.interestRate);
+    updateState({
+      bankDeposit: state.bankDeposit + interest,
+      totalInterestEarned: state.totalInterestEarned + interest,
+    });
+
+    return interest;
+  };
+
   const nextRound = () => {
     if (state.credits < state.currentGoal) return;
 
-    // Instead of advancing immediately, Trigger Phone Call
-    // Check if curse triggered this round? (Simplification: just random/luck based for now in generation)
+    // Award reward tickets for completing the round!
+    const ticketsEarned = state.roundRewardTickets;
+    const newTickets = state.tickets + ticketsEarned;
+
+    // Show toast for ticket reward
+    if (ticketsEarned > 0) {
+      setToast(`🎟️ +${ticketsEarned} 티켓 획득!`);
+    }
+
+    // Trigger Phone Call for next round selection
     const choices = generatePhoneChoices(state.round, false);
 
     updateState({
+      tickets: newTickets,
       showPhoneModal: true,
       currentPhoneChoices: choices
     });
 
-    playSound('jackpot'); // Ring ring sound placeholder
+    playSound('jackpot');
   };
 
   const selectPhoneBonus = (bonusId: string) => {
@@ -686,6 +741,22 @@ export function useSlotMachine() {
       showRoundSelector: false,
     });
 
+    // Apply bank interest at the start of each new day/round
+    if (state.bankDeposit > 0) {
+      const interest = Math.floor(state.bankDeposit * state.interestRate);
+      if (interest > 0) {
+        // Use setTimeout to show interest toast after main update
+        setTimeout(() => {
+          updateState({
+            bankDeposit: stateRef.current.bankDeposit + interest,
+            totalInterestEarned: stateRef.current.totalInterestEarned + interest,
+          });
+          setToast(`📈 이자 +${interest} 코인!`);
+          setTimeout(() => setToast(null), 2000);
+        }, 500);
+      }
+    }
+
     playSound('start');
     setMessage(`ROUND ${nextRoundNum} - DAY ${nextDay} START!`);
   };
@@ -720,6 +791,8 @@ export function useSlotMachine() {
       buyTicketItem,
       useTicketItem,
       purchaseTalisman,
+      depositToBank,
+      withdrawFromBank,
       claimDaily,
       playSound,
       nextRound,

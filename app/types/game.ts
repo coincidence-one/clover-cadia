@@ -125,6 +125,11 @@ export interface GameState {
     curseBonus: number; // Coins on 666 (악마의 뿔)
     dynamoChance: number; // Respin chance on win (다이나모)
   };
+
+  // ATM System (Bank)
+  bankDeposit: number; // Coins deposited in ATM
+  interestRate: number; // Interest rate (0.1 = 10%)
+  totalInterestEarned: number; // Total interest earned this game
 }
 
 // ===== ROUND TYPES =====

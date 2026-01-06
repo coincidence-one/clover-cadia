@@ -76,6 +76,11 @@ export const INITIAL_GAME_STATE: GameState = {
     curseBonus: 0,
     dynamoChance: 0,
   },
+
+  // ATM System
+  bankDeposit: 0,
+  interestRate: 0.1, // 10% interest
+  totalInterestEarned: 0,
 };
 
 // Storage key
