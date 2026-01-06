@@ -8,9 +8,11 @@ interface RoundDifficultySelectorProps {
   open: boolean;
   onSelect: (isRisky: boolean) => void;
   roundNumber: number;
+  currentDay: number;
+  maxDays: number;
 }
 
-export function RoundDifficultySelector({ open, onSelect, roundNumber }: RoundDifficultySelectorProps) {
+export function RoundDifficultySelector({ open, onSelect, roundNumber, currentDay, maxDays }: RoundDifficultySelectorProps) {
   const { t } = useLocale();
   const config = getRoundConfig(roundNumber);
   
@@ -27,7 +29,7 @@ export function RoundDifficultySelector({ open, onSelect, roundNumber }: RoundDi
       >
         <DialogHeader>
           <DialogTitle className="text-blue-400 text-center text-lg sm:text-xl">
-            {t.round} {roundNumber} {t.setup || "SETUP"}
+            {t.round} {roundNumber} - DAY {currentDay}/{maxDays}
           </DialogTitle>
         </DialogHeader>
         

@@ -238,7 +238,9 @@ export default function SlotMachine() {
       <RoundDifficultySelector 
         open={state.showRoundSelector} 
         onSelect={actions.startRound} 
-        roundNumber={state.round === 0 ? 1 : (state.showRoundSelector && state.round > 0 ? state.round + 1 : state.round)} 
+        roundNumber={state.round === 0 ? 1 : (state.showRoundSelector && state.round > 0 ? (state.credits >= state.currentGoal ? state.round + 1 : state.round) : state.round)} 
+        currentDay={state.currentDay}
+        maxDays={state.maxDays}
       />
 
       <GameGuideModal open={showGuide} onClose={() => setShowGuide(false)} />

@@ -8,10 +8,10 @@ interface RoundInfoBarProps {
 export function RoundInfoBar({ state }: RoundInfoBarProps) {
   return (
     <div className="w-full max-w-lg flex gap-2 mb-4">
-        {/* Round Number */}
+        {/* Round & Day Info */}
         <div className="flex-1 bg-purple-900 border-2 border-purple-400 p-2 text-center">
-            <div className="text-[10px] text-purple-200">ROUND</div>
-            <div className="text-xl text-white">{state.round}</div>
+            <div className="text-[10px] text-purple-200">ROUND {state.round}</div>
+            <div className="text-xl text-white">DAY {state.currentDay}/{state.maxDays}</div>
         </div>
 
         {/* Goal Progress */}

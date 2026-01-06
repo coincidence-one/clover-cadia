@@ -219,20 +219,40 @@ export function useSlotMachine() {
     const newTotalSpins = currentState.totalSpins + 1;
     const newTotalWins = totalWin > 0 ? currentState.totalWins + 1 : currentState.totalWins;
 
-    // Check Game Over Condition
+    // Check Deadline Condition
     if (newSpinsLeft <= 0 && newCredits < state.currentGoal) {
-      updateState({
-        credits: newCredits,
-        lastWin: totalWin,
-        totalSpins: newTotalSpins,
-        totalWins: newTotalWins,
-        gameOver: true
-      });
-      playSound('lose');
-      setMessage('☠️ GAME OVER - OUT OF SPINS! ☠️');
-      setIsSpinning(false);
-      return;
+      if (state.currentDay < state.maxDays) {
+        // Next Day available
+        updateState({
+          credits: newCredits,
+          lastWin: totalWin,
+          totalSpins: newTotalSpins,
+          totalWins: newTotalWins,
+          // Prepare next day
+          currentDay: state.currentDay + 1,
+          showRoundSelector: true,
+          spinsLeft: 0,
+        });
+        setMessage(`DAY ${state.currentDay} END! PREPARE FOR DAY ${state.currentDay + 1}`);
+        playSound('levelup'); // Alarm sound
+        setIsSpinning(false);
+        return;
+      } else {
+        // Final Day Failed -> GAME OVER
+        updateState({
+          credits: newCredits,
+          lastWin: totalWin,
+          totalSpins: newTotalSpins,
+          totalWins: newTotalWins,
+          gameOver: true
+        });
+        playSound('lose');
+        setMessage('☠️ GAME OVER - OUT OF TIME! ☠️');
+        setIsSpinning(false);
+        return;
+      }
     }
+
 
     updateState({
       credits: newCredits,
@@ -461,12 +481,18 @@ export function useSlotMachine() {
       showPhoneModal: false,
       showRoundSelector: true, // Trigger Round Difficulty Selection
     });
-
     setToast(`${bonus.icon} ${bonus.name} SELECTED!`);
   };
 
   const startRound = (isRisky: boolean) => {
-    const nextRoundNum = state.round > 0 ? state.round + 1 : 1;
+    // Determine if we are starting a NEW ROUND (Goal Met) or NEXT DAY (Goal Pending)
+    // Also handle initial game start (Round 0)
+    const isNewRound = state.credits >= state.currentGoal || state.round === 0;
+
+    const nextRoundNum = isNewRound ? state.round + 1 : state.round;
+    const nextDay = isNewRound ? 1 : state.currentDay;
+
+    // Get Config for the ROUND (Safe/Risky values depend on Round, not Day)
     const config = getRoundConfig(nextRoundNum);
 
     // Determine Mode
@@ -481,6 +507,7 @@ export function useSlotMachine() {
 
     updateState({
       round: nextRoundNum,
+      currentDay: nextDay,
       credits: state.credits - mode.cost, // Deduct Entry Fee
       currentGoal: config.goal,
       spinsLeft: mode.spins,
@@ -491,7 +518,7 @@ export function useSlotMachine() {
     });
 
     playSound('start');
-    setMessage(`ROUND ${nextRoundNum} START!`);
+    setMessage(`ROUND ${nextRoundNum} - DAY ${nextDay} START!`);
   };
 
   const restartGame = () => {

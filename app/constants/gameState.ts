@@ -57,6 +57,10 @@ export const INITIAL_GAME_STATE: GameState = {
   showRoundSelector: true, // Start game with selection
   mercyUsed: false,
   roundRewardTickets: 1,
+
+  // Deadline System
+  currentDay: 1,
+  maxDays: 3,
 };
 
 // Storage key

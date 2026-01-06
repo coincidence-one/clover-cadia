@@ -106,6 +106,10 @@ export interface GameState {
   showRoundSelector: boolean; // For choosing 3 vs 7 spins
   mercyUsed: boolean; // Tracking 1 free spin if balance low
   roundRewardTickets: number; // 2 for Risky, 1 for Safe
+
+  // Deadline System (New)
+  currentDay: number; // 1, 2, 3
+  maxDays: number; // 3
 }
 
 // ===== ROUND TYPES =====
