@@ -281,13 +281,22 @@ export default function SlotMachine() {
             </div>
          </div>
 
-          <Button 
-            className={`w-full h-16 text-2xl tracking-widest ${isSpinning ? 'bg-stone-700' : 'bg-red-600 hover:bg-red-500'} border-b-4 border-red-800 active:border-b-0 active:mt-1`}
-            onClick={actions.spin}
-            disabled={isSpinning || state.spinsLeft <= 0}
-         >
-            {isSpinning ? '...' : state.bonusSpins > 0 ? `FREE SPIN (${state.bonusSpins})` : `SPIN`}
-         </Button>
+          {state.spinsLeft <= 0 ? (
+             <Button 
+               className="w-full h-16 text-xl md:text-2xl tracking-widest bg-blue-700 hover:bg-blue-600 border-b-4 border-blue-900 active:border-b-0 active:mt-1 animate-pulse"
+               onClick={actions.endDay}
+             >
+               {state.currentDay >= state.maxDays ? '💀 CHECK DEADLINE 💀' : `🌙 FINISH DAY ${state.currentDay}`}
+             </Button>
+          ) : (
+             <Button 
+               className={`w-full h-16 text-2xl tracking-widest ${isSpinning ? 'bg-stone-700' : 'bg-red-600 hover:bg-red-500'} border-b-4 border-red-800 active:border-b-0 active:mt-1`}
+               onClick={actions.spin}
+               disabled={isSpinning}
+             >
+               {isSpinning ? '...' : state.bonusSpins > 0 ? `FREE SPIN (${state.bonusSpins})` : `SPIN`}
+             </Button>
+          )}
       </div>
 
        {/* Spacer for mobile bottom safe area */}
