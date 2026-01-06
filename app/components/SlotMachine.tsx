@@ -232,10 +232,19 @@ export default function SlotMachine() {
                   transition-all duration-100 overflow-hidden relative
                 `}
               >
-                {/* Spin Blur Effect Layer */}
+                {/* Spin Reel Effect Layer (Fake Scrolling Strip) */}
                 {isColSpinning && (
-                   <div className="absolute inset-0 bg-stone-900/60 flex items-center justify-center animate-pulse z-20">
-                      <span className="blur-[1px] text-4xl text-yellow-500 font-bold">?</span>
+                   <div className="absolute inset-0 overflow-hidden bg-stone-900 z-20 rounded-md">
+                      <div className="flex flex-col items-center animate-scroll">
+                         {/* Strip A */}
+                         {['🍒','🍋','🔔','💎','💰','7️⃣'].map((s, i) => (
+                           <div key={`a-${i}`} className="h-12 md:h-16 w-full flex items-center justify-center text-3xl md:text-4xl">{s}</div>
+                         ))}
+                         {/* Strip B (Loop) */}
+                         {['🍒','🍋','🔔','💎','💰','7️⃣'].map((s, i) => (
+                           <div key={`b-${i}`} className="h-12 md:h-16 w-full flex items-center justify-center text-3xl md:text-4xl">{s}</div>
+                         ))}
+                      </div>
                    </div>
                 )}
                 

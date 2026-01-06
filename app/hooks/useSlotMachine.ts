@@ -224,14 +224,20 @@ export function useSlotMachine() {
       // Also consume in next updateState
     }
 
-    // Animate spinning
-    for (let i = 0; i < 10; i++) {
-      await new Promise(r => setTimeout(r, 50));
-      // Animation override: use simpler random or same weights
-      setGrid(Array(15).fill('').map(() => generateSymbol().icon));
-    }
-
+    // Generate new grid (moved up)
+    // We update the grid immediately hidden behind the spinning overlays
     setGrid(newGrid);
+
+    // Animate spinning stops (Staggered)
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 250));
+      setReelSpinning(prev => {
+        const next = [...prev];
+        next[i] = false;
+        return next;
+      });
+      playSound('click');
+    }
 
     // Check for 666 curse
     if (hasCurse(newGrid)) {
