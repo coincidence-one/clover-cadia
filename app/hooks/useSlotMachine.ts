@@ -37,6 +37,7 @@ import {
   hasCurse,
   checkPatternWin,
   checkPaylineWin,
+  refreshTalismanShop,
 } from '@/app/utils/gameHelpers';
 
 // Re-export constants for component usage
@@ -82,11 +83,33 @@ export function useSlotMachine() {
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
+      // Hydrate state
       try {
-        setState(JSON.parse(saved));
-      } catch {
-        console.error('Failed to load saved game');
+        const parsed = JSON.parse(saved);
+
+        // Safety check for null shopTalismans if old save
+        if (!parsed.shopTalismans || parsed.shopTalismans.length === 0) {
+          parsed.shopTalismans = refreshTalismanShop(3, parsed.ownedTalismans || []);
+          parsed.talismanSlots = parsed.talismanSlots || 7;
+          parsed.shopRerollCost = parsed.shopRerollCost || 10;
+        }
+
+        // Merge with initial state to ensure new structure exists
+        setState(prev => ({
+          ...INITIAL_GAME_STATE,
+          ...parsed,
+          activeBonuses: parsed.activeBonuses || [], // ensure array
+        }));
+      } catch (e) {
+        console.error("Failed to parse game state", e);
+        // If fail, init shop
+        const initialShop = refreshTalismanShop(3, []);
+        setState({ ...INITIAL_GAME_STATE, shopTalismans: initialShop });
       }
+    } else {
+      // First time load
+      const initialShop = refreshTalismanShop(3, []);
+      setState({ ...INITIAL_GAME_STATE, shopTalismans: initialShop });
     }
   }, []);
 
@@ -502,6 +525,14 @@ export function useSlotMachine() {
       return;
     }
 
+    // Check Slot Limit (Default 7)
+    if (state.ownedTalismans.length >= state.talismanSlots) {
+      setToast(`부적 슬롯이 가득 찼습니다! (최대 ${state.talismanSlots}개)`);
+      playSound('error');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+
     // Deduct tickets and add to owned
     const newTickets = state.tickets - talisman.price;
     const newOwned = [...state.ownedTalismans, talismanId];
@@ -538,14 +569,38 @@ export function useSlotMachine() {
     // Special
     if (talismanId === 'dynamo') effects.dynamoChance = 0.5;
 
+    // Remove from shop list after purchase
+    const newShopList = state.shopTalismans.filter(id => id !== talismanId);
+
     updateState({
       tickets: newTickets,
       ownedTalismans: newOwned,
       talismanEffects: effects,
+      shopTalismans: newShopList,
     });
 
     playSound('buy');
     setToast(`${talisman.icon} ${talisman.name} 획득!`);
+    setTimeout(() => setToast(null), 2000);
+  };
+
+  const rerollTalismanShop = () => {
+    const cost = state.shopRerollCost;
+    if (state.credits < cost) {
+      setToast(`코인이 부족합니다! (리롤 비용: ${cost})`);
+      playSound('error');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+
+    const newShop = refreshTalismanShop(3, state.ownedTalismans);
+    updateState({
+      credits: state.credits - cost,
+      shopTalismans: newShop
+    });
+
+    playSound('coin');
+    setToast('🔄 상점 목록 갱신!');
     setTimeout(() => setToast(null), 2000);
   };
 
@@ -741,6 +796,11 @@ export function useSlotMachine() {
       showRoundSelector: false,
     });
 
+    // Auto-refresh Talisman Shop on New Day/Round
+    // This gives new strategic options before spending tickets
+    const newShop = refreshTalismanShop(3, state.ownedTalismans);
+    updateState({ shopTalismans: newShop });
+
     // Apply bank interest at the start of each new day/round
     if (state.bankDeposit > 0) {
       const interest = Math.floor(state.bankDeposit * state.interestRate);
@@ -791,6 +851,7 @@ export function useSlotMachine() {
       buyTicketItem,
       useTicketItem,
       purchaseTalisman,
+      rerollTalismanShop,
       depositToBank,
       withdrawFromBank,
       claimDaily,

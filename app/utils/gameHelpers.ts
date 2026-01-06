@@ -1,5 +1,6 @@
 import type { GameSymbol } from '@/app/types';
-import { SYMBOLS, WILD_SYMBOL } from '@/app/constants';
+import { SYMBOLS, WILD_SYMBOL, TALISMANS } from '@/app/constants';
+import type { TalismanRarity } from '@/app/constants/talismans';
 
 /**
  * Normalize emoji string for consistent comparison
@@ -243,4 +244,49 @@ export function checkPaylineWin(
     };
   }
   return null;
+}
+/**
+ * Generate a randomized list of talismans for the shop
+ * Rarity Weights: Common (50%), Uncommon (30%), Rare (15%), Legendary (5%)
+ */
+export function refreshTalismanShop(count: number = 3, ownedIds: string[] = []): string[] {
+  const allTalismans = Object.values(TALISMANS);
+
+  // Weights
+  const weights: Record<TalismanRarity, number> = {
+    common: 50,
+    uncommon: 30,
+    rare: 15,
+    legendary: 5,
+  };
+
+  const selected: string[] = [];
+
+  // Filter out already owned? (Depending on if duplicates are allowed. CloverPit logic usually unique usually)
+  // Let's assume unique ownership for now as per our system
+  const available = allTalismans.filter(t => !ownedIds.includes(t.id));
+
+  for (let i = 0; i < count; i++) {
+    const rand = Math.random() * 100;
+    let targetRarity: TalismanRarity = 'common';
+
+    if (rand > 95) targetRarity = 'legendary';
+    else if (rand > 80) targetRarity = 'rare';
+    else if (rand > 50) targetRarity = 'uncommon';
+
+    // Find candidates of this rarity
+    let candidates = available.filter(t => t.rarity === targetRarity && !selected.includes(t.id));
+
+    // Fallback if no candidates of rarity (e.g., all legendary owned)
+    if (candidates.length === 0) {
+      candidates = available.filter(t => !selected.includes(t.id));
+    }
+
+    if (candidates.length > 0) {
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      selected.push(pick.id);
+    }
+  }
+
+  return selected;
 }

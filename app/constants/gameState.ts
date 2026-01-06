@@ -64,6 +64,9 @@ export const INITIAL_GAME_STATE: GameState = {
 
   // Talisman System
   ownedTalismans: [],
+  shopTalismans: [], // Empty initially, populated on mount/start
+  talismanSlots: 7,
+  shopRerollCost: 10,
   talismanEffects: {
     symbolValueBoosts: {},
     curseProtectionPermanent: false,

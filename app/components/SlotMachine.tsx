@@ -111,10 +111,16 @@ export default function SlotMachine() {
           />
 
           {/* TalismanShop */}
+          {/* TalismanShop */}
           <TalismanShop
             tickets={state.tickets}
+            credits={state.credits}
             ownedTalismans={state.ownedTalismans}
+            shopTalismans={state.shopTalismans || []} // Fallback for old state
+            rerollCost={state.shopRerollCost}
+            maxSlots={state.talismanSlots}
             onPurchase={actions.purchaseTalisman}
+            onReroll={actions.rerollTalismanShop}
           />
 
           {/* ATM */}
