@@ -4,6 +4,8 @@ import { useLocale } from '@/app/contexts/LocaleContext';
 import { Badge } from '@/components/ui/8bit/badge';
 import { Button } from '@/components/ui/8bit/button';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/8bit/dialog';
+import { getDisplayProbabilities } from '@/app/utils/gameHelpers';
+import type { GameState } from '@/app/types';
 
 // Rarity Helper
 const getRarity = (id: string, t: any) => {
@@ -20,11 +22,18 @@ const getRarity = (id: string, t: any) => {
   }
 };
 
-const SymbolRow = ({ symbol, t }: { symbol: any, t: any }) => {
+const SymbolRow = ({ symbol, t, probability }: { symbol: any, t: any, probability?: any }) => {
   const rarity = getRarity(symbol.id, t);
-  // Base value calculation: Symbol Value * 10 (since 3-match multiplier is 1x, logic is (matches-2)*10)
-  // Actually logic is: Value * (Match-2) * 10. So 3 Match = Value * 1 * 10 = 10 * Value.
   const basePayout = symbol.value > 0 ? symbol.value * 10 : 0;
+  
+  // Probability Display
+  const probDisplay = probability ? (
+    <div className={`text-[10px] ${probability.changed === 'up' ? 'text-green-400' : probability.changed === 'down' ? 'text-red-400' : 'text-stone-500'}`}>
+      {probability.changed === 'up' && '▲'}
+      {probability.changed === 'down' && '▼'} 
+      {probability.current}%
+    </div>
+  ) : null;
 
   return (
     <div className="flex items-center justify-between border-b border-stone-700 py-1 text-xs">
@@ -32,6 +41,7 @@ const SymbolRow = ({ symbol, t }: { symbol: any, t: any }) => {
         <span className="text-xl">{symbol.icon}</span>
         <div className="flex flex-col">
           <span className={rarity.color + " uppercase font-bold text-[10px]"}>{rarity.label}</span>
+          {probDisplay}
         </div>
       </div>
       <div className="text-right">
@@ -41,18 +51,20 @@ const SymbolRow = ({ symbol, t }: { symbol: any, t: any }) => {
   );
 };
 
-export const SymbolsPanel = () => {
+export const SymbolsPanel = ({ state }: { state?: GameState }) => {
   const { t } = useLocale();
+  const probs = state ? getDisplayProbabilities(state.activeBonuses, state.activeTicketEffects) : null;
+
   return (
     <div className="bg-stone-900/90 border-2 border-stone-600 p-2 w-48 text-stone-200">
       <h3 className="text-center text-yellow-400 border-b-2 border-yellow-600 pb-1 mb-2">{t.symbols}</h3>
       <div className="flex justify-between text-[10px] text-stone-500 mb-1 px-1">
-        <span>TYPE</span>
+        <span>TYPE / PROB</span>
         <span>{t.baseValue}</span>
       </div>
       <div className="space-y-1">
         {SYMBOLS.filter(s => s.id !== 'wild').map(s => (
-          <SymbolRow key={s.id} symbol={s} t={t} />
+          <SymbolRow key={s.id} symbol={s} t={t} probability={probs ? probs[s.id] : undefined} />
         ))}
         {/* Wild Card Manual Entry */}
         <div className="flex items-center justify-between border-b border-stone-700 py-1 text-xs">
@@ -123,7 +135,7 @@ export const PatternsPanel = () => {
   );
 };
 
-export const PaytableModal = () => {
+export const PaytableModal = ({ state }: { state?: GameState }) => {
   const { t } = useLocale();
   
   return (
@@ -136,7 +148,7 @@ export const PaytableModal = () => {
       <DialogContent className="max-w-3xl bg-stone-900 border-4 border-stone-500 text-white max-h-[80vh] overflow-y-auto">
         <DialogTitle className="sr-only">{t.paytableTitle}</DialogTitle>
         <div className="flex flex-col md:flex-row gap-4 justify-center items-start pt-4">
-          <SymbolsPanel />
+          <SymbolsPanel state={state} />
           <PatternsPanel />
         </div>
       </DialogContent>

@@ -64,7 +64,7 @@ export default function SlotMachine() {
 
       {/* Desktop Paytable Layout (Left & Right) */}
       <div className="hidden xl:block absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-all duration-500 will-change-transform">
-        <SymbolsPanel />
+        <SymbolsPanel state={state} />
       </div>
       <div className="hidden xl:block absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-all duration-500 will-change-transform">
         <PatternsPanel />
@@ -92,7 +92,7 @@ export default function SlotMachine() {
 
           {/* Paytable Modal (Mobile/Tablet) */}
           <div className="xl:hidden">
-            <PaytableModal />
+            <PaytableModal state={state} />
           </div>
 
           {/* Language Toggle */}

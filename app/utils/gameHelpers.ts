@@ -3,7 +3,6 @@ import { SYMBOLS, WILD_SYMBOL } from '@/app/constants';
 
 /**
  * Normalize emoji string for consistent comparison
- * Some emojis like 7️⃣ have variation selectors that can cause comparison issues
  */
 export function normalizeEmoji(emoji: string): string {
   return emoji.normalize('NFC');
@@ -17,27 +16,112 @@ export function symbolsMatch(a: string, b: string, wildIcon: string): boolean {
   const normB = normalizeEmoji(b);
   const normWild = normalizeEmoji(wildIcon);
 
-  // WILD matches anything
   if (normA === normWild || normB === normWild) return true;
-
   return normA === normB;
 }
 
 /**
- * Get a random symbol based on weighted probabilities
- * @param boostClover - If true, increases clover probability
+ * Calculate active symbol weights based on game state
+ * Centralizes logic for both spinning and UI display
  */
-export function getWeightedRandomSymbol(boostClover = false): GameSymbol {
-  const symbols = SYMBOLS.map(s => ({ ...s })); // Clone to avoid mutation
+export function getActiveSymbols(
+  activeBonuses: string[] = [],
+  activeTicketEffects: Record<string, any> = {}
+): GameSymbol[] {
+  // Clone symbols to avoid mutation
+  const symbols = SYMBOLS.map(s => ({ ...s }));
 
-  // Boost clover probability if lucky charm active
-  if (boostClover) {
-    const cloverIdx = symbols.findIndex(s => s.id === 'clover');
-    if (cloverIdx !== -1) {
-      symbols[cloverIdx].probability = 0.25;
-    }
+  // 1. Apply Lucky Charm (Ticket Item)
+  // luckyCharm boosts Clover probability significantly (0.149 -> 0.25)
+  if ((activeTicketEffects['luckyCharm'] || 0) > 0) {
+    const clover = symbols.find(s => s.id === 'clover');
+    if (clover) clover.probability = 0.25;
   }
 
+  // 2. Apply Phone Bonuses (Permanent Buffs)
+  // buff_X_up increases probability by flat amount (e.g. +0.05) or percentage?
+  // Let's assume +5% probability weight
+  const BUFF_AMOUNT = 0.05;
+
+  if (activeBonuses.includes('buff_cherry_up')) {
+    const s = symbols.find(x => x.id === 'cherry');
+    if (s) s.probability += BUFF_AMOUNT;
+  }
+  if (activeBonuses.includes('buff_lemon_up')) {
+    const s = symbols.find(x => x.id === 'lemon');
+    if (s) s.probability += BUFF_AMOUNT;
+  }
+  if (activeBonuses.includes('buff_clover_up')) {
+    const s = symbols.find(x => x.id === 'clover');
+    if (s) s.probability += BUFF_AMOUNT;
+  }
+  if (activeBonuses.includes('buff_bell_up')) {
+    const s = symbols.find(x => x.id === 'bell');
+    if (s) s.probability += BUFF_AMOUNT;
+  }
+  if (activeBonuses.includes('buff_seven_up')) {
+    const s = symbols.find(x => x.id === 'seven');
+    if (s) s.probability += 0.02; // +2% for legendary
+  }
+
+  // 3. Risk Bonuses
+  if (activeBonuses.includes('risk_cursed_luck')) {
+    // Increase 666 (curse) and 777 (jackpot)
+    const six = symbols.find(x => x.id === 'six');
+    if (six) six.probability += 0.02;
+    const seven = symbols.find(x => x.id === 'seven');
+    if (seven) seven.probability += 0.02;
+  }
+
+  return symbols;
+}
+
+/**
+ * Get display probabilities (normalized percentages)
+ */
+export function getDisplayProbabilities(
+  activeBonuses: string[] = [],
+  activeTicketEffects: Record<string, any> = {}
+): Record<string, { current: number, base: number, changed: 'up' | 'down' | 'same' }> {
+
+  const currentSymbols = getActiveSymbols(activeBonuses, activeTicketEffects);
+  const totalWeight = currentSymbols.reduce((sum, s) => sum + s.probability, 0);
+
+  const result: Record<string, any> = {};
+
+  SYMBOLS.forEach(baseSym => {
+    const currentSym = currentSymbols.find(s => s.id === baseSym.id)!;
+
+    // Normalize to 100%
+    // Base total weight is ~1.015, we should normalize that too for fair comparison
+    const baseTotal = SYMBOLS.reduce((sum, s) => sum + s.probability, 0);
+
+    const basePct = (baseSym.probability / baseTotal) * 100;
+    const currentPct = (currentSym.probability / totalWeight) * 100;
+
+    let changed: 'up' | 'down' | 'same' = 'same';
+    if (Math.abs(currentPct - basePct) > 0.1) {
+      changed = currentPct > basePct ? 'up' : 'down';
+    }
+
+    result[baseSym.id] = {
+      current: Number(currentPct.toFixed(1)),
+      base: Number(basePct.toFixed(1)),
+      changed
+    };
+  });
+
+  return result;
+}
+
+/**
+ * Get a random symbol based on weighted probabilities
+ */
+export function getWeightedRandomSymbol(
+  activeBonuses: string[] = [],
+  activeTicketEffects: Record<string, any> = {}
+): GameSymbol {
+  const symbols = getActiveSymbols(activeBonuses, activeTicketEffects);
   const totalProb = symbols.reduce((sum, s) => sum + s.probability, 0);
   let random = Math.random() * totalProb;
 
@@ -50,7 +134,7 @@ export function getWeightedRandomSymbol(boostClover = false): GameSymbol {
 }
 
 /**
- * Generate initial grid with static values (for SSR hydration)
+ * Generate boolean checks helpers
  */
 export function getInitialGrid(): string[] {
   return [
@@ -60,16 +144,15 @@ export function getInitialGrid(): string[] {
   ];
 }
 
-/**
- * Generate random grid for spinning
- */
-export function generateRandomGrid(boostClover = false): string[] {
-  return Array(15).fill('').map(() => getWeightedRandomSymbol(boostClover).icon);
+export function generateRandomGrid(
+  activeBonuses: string[] = [],
+  activeTicketEffects: Record<string, any> = {}
+): string[] {
+  return Array(15).fill('').map(() =>
+    getWeightedRandomSymbol(activeBonuses, activeTicketEffects).icon
+  );
 }
 
-/**
- * Add wild card to grid
- */
 export function addWildToGrid(grid: string[]): string[] {
   const newGrid = [...grid];
   const randomIndex = Math.floor(Math.random() * newGrid.length);
@@ -77,35 +160,18 @@ export function addWildToGrid(grid: string[]): string[] {
   return newGrid;
 }
 
-/**
- * Count occurrences of a symbol in grid (normalized comparison)
- */
 export function countSymbol(grid: string[], symbolIcon: string): number {
   const normalizedTarget = normalizeEmoji(symbolIcon);
   return grid.filter(cell => normalizeEmoji(cell) === normalizedTarget).length;
 }
 
-/**
- * Check if grid has 666 curse (3 or more 6s)
- * Uses normalized comparison for reliable emoji matching
- */
 export function hasCurse(grid: string[]): boolean {
   const sixSymbol = SYMBOLS.find(s => s.id === 'six');
   if (!sixSymbol) return false;
-
   const sixCount = countSymbol(grid, sixSymbol.icon);
   return sixCount >= 3;
 }
 
-/**
- * Check payline for wins - FIXED VERSION
- * 
- * Rules:
- * 1. Matches must be CONSECUTIVE from the LEFT
- * 2. WILD can substitute for any symbol
- * 3. If first symbol is WILD, use the next non-WILD symbol as target
- * 4. Need at least 3 consecutive matches for a win
- */
 export function checkPaylineWin(
   grid: string[],
   payline: number[]
@@ -114,14 +180,10 @@ export function checkPaylineWin(
 
   const wildIcon = normalizeEmoji(WILD_SYMBOL.icon);
   const symbols = payline.map(idx => {
-    if (idx < 0 || idx >= grid.length) {
-      console.error(`Invalid payline index: ${idx}`);
-      return '';
-    }
+    if (idx < 0 || idx >= grid.length) return '';
     return normalizeEmoji(grid[idx]);
   });
 
-  // Find the target symbol (first non-WILD symbol)
   let targetSymbol = '';
   for (const sym of symbols) {
     if (sym !== wildIcon && sym !== '') {
@@ -130,9 +192,7 @@ export function checkPaylineWin(
     }
   }
 
-  // If all symbols are WILD (or empty), that's a win with WILDs
   if (targetSymbol === '') {
-    // All WILDs - count them as match
     const wildCount = symbols.filter(s => s === wildIcon).length;
     if (wildCount >= 3) {
       return {
@@ -144,21 +204,16 @@ export function checkPaylineWin(
     return null;
   }
 
-  // Count consecutive matches from the LEFT
   let matches = 0;
   for (let i = 0; i < symbols.length; i++) {
     const sym = symbols[i];
-
-    // Symbol matches if it equals target OR is WILD
     if (sym === targetSymbol || sym === wildIcon) {
       matches++;
     } else {
-      // Chain broken - stop counting
       break;
     }
   }
 
-  // Need at least 3 matches for a win
   if (matches >= 3) {
     return {
       matches,
@@ -168,22 +223,4 @@ export function checkPaylineWin(
   }
 
   return null;
-}
-
-/**
- * Debug helper: Log grid state
- */
-export function debugGrid(grid: string[]): void {
-  console.log('Grid State:');
-  console.log(`  ${grid.slice(0, 5).join(' ')}`);
-  console.log(`  ${grid.slice(5, 10).join(' ')}`);
-  console.log(`  ${grid.slice(10, 15).join(' ')}`);
-}
-
-/**
- * Debug helper: Log payline check result
- */
-export function debugPayline(grid: string[], payline: number[], result: ReturnType<typeof checkPaylineWin>): void {
-  const symbols = payline.map(idx => grid[idx]);
-  console.log(`Payline [${payline.join(',')}]: ${symbols.join(' ')} => ${result ? `WIN! ${result.matches}x ${result.symbol}` : 'No win'}`);
 }

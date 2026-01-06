@@ -151,52 +151,24 @@ export function useSlotMachine() {
     // Real check happens at end of spin.
 
     // Generate new grid
-    // Check for probability buffs from phone bonuses OR active ticket items
+    // Generate new grid using centralized probability logic
+    const generateSymbol = () => getWeightedRandomSymbol(state.activeBonuses, state.activeTicketEffects);
 
-    // Lucky Charm (Active Ticket Item) boosts Clover/Rare
-    const boostClover = (state.activeTicketEffects['luckyCharm'] || 0) > 0;
-
-    // Custom weighted random wrapper for bonuses
-    const getSymbolWithBonuses = () => {
-      const symbol = getWeightedRandomSymbol(boostClover);
-      // Apply permanent probability buffs (Phone Bonuses)
-      // This is a simplified implementation - in reality we should adjust weights
-      // Here we just re-roll if we hit a buffed symbol's target
-
-      // Example: Buff Cherry -> If !Cherry, 2% chance to force Cherry
-      if (state.activeBonuses.includes('buff_cherry_up') && symbol.id !== 'cherry' && Math.random() < 0.02) return SYMBOLS.find(s => s.id === 'cherry')!;
-      if (state.activeBonuses.includes('buff_lemon_up') && symbol.id !== 'lemon' && Math.random() < 0.02) return SYMBOLS.find(s => s.id === 'lemon')!;
-      if (state.activeBonuses.includes('buff_clover_up') && symbol.id !== 'clover' && Math.random() < 0.02) return SYMBOLS.find(s => s.id === 'clover')!;
-      if (state.activeBonuses.includes('buff_bell_up') && symbol.id !== 'bell' && Math.random() < 0.02) return SYMBOLS.find(s => s.id === 'bell')!;
-      if (state.activeBonuses.includes('buff_seven_up') && symbol.id !== 'seven' && Math.random() < 0.01) return SYMBOLS.find(s => s.id === 'seven')!;
-
-      // Risk: Devil Deal (666 up, 777 up)
-      if (state.activeBonuses.includes('risk_cursed_luck')) {
-        if (symbol.id !== 'six' && Math.random() < 0.01) return SYMBOLS.find(s => s.id === 'six')!;
-        if (symbol.id !== 'seven' && Math.random() < 0.02) return SYMBOLS.find(s => s.id === 'seven')!;
-      }
-
-      return symbol;
-    };
-
-    let newGrid = Array(15).fill('').map(() =>
-      getSymbolWithBonuses().icon
-    );
+    let newGrid = Array(15).fill('').map(() => generateSymbol().icon);
 
     // Apply wild card effect (Consumable trigger)
-    // We check if wildCard active effect is > 0 (set by useTicketItem)
     if ((state.activeTicketEffects['wildCard'] || 0) > 0) {
       newGrid = addWildToGrid(newGrid);
-      // Consume the effect
       const newActive = { ...state.activeTicketEffects };
       delete newActive['wildCard'];
-      updateState({ activeEffects: { ...state.activeEffects, wildCard: false }, activeTicketEffects: newActive });
+      // Also consume in next updateState
     }
 
     // Animate spinning
     for (let i = 0; i < 10; i++) {
       await new Promise(r => setTimeout(r, 50));
-      setGrid(Array(15).fill('').map(() => getWeightedRandomSymbol().icon));
+      // Animation override: use simpler random or same weights
+      setGrid(Array(15).fill('').map(() => generateSymbol().icon));
     }
 
     setGrid(newGrid);
