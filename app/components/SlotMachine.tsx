@@ -204,19 +204,21 @@ export default function SlotMachine() {
                 <div className="text-[10px] text-stone-400">{t.coins}</div>
                 <div className="text-xl text-yellow-400">{state.credits}</div>
             </div>
-            {/* Spin Cost Display */}
+            {/* Spin Cost Display -> Spins Left */}
              <div className="flex-1 bg-black border-2 border-stone-600 p-2 text-center">
-                <div className="text-[10px] text-stone-400">{t.spinCostAlias || "SPIN COST"}</div>
-                <div className="text-xl text-red-400">{SPIN_COST}</div>
+                <div className="text-[10px] text-stone-400">{t.spins || "SPINS LEFT"}</div>
+                <div className={`text-xl ${state.spinsLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-green-400'}`}>
+                  {state.spinsLeft}
+                </div>
             </div>
          </div>
 
-         <Button 
+          <Button 
             className={`w-full h-16 text-2xl tracking-widest ${isSpinning ? 'bg-stone-700' : 'bg-red-600 hover:bg-red-500'} border-b-4 border-red-800 active:border-b-0 active:mt-1`}
             onClick={actions.spin}
-            disabled={isSpinning || state.credits < 10 && state.bonusSpins <= 0}
+            disabled={isSpinning || state.spinsLeft <= 0}
          >
-            {isSpinning ? '...' : state.bonusSpins > 0 ? `FREE SPIN (${state.bonusSpins})` : `SPIN (-${SPIN_COST})`}
+            {isSpinning ? '...' : state.bonusSpins > 0 ? `FREE SPIN (${state.bonusSpins})` : `SPIN`}
          </Button>
       </div>
 

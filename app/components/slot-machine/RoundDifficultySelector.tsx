@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/8bit/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/8bit/dialog';
 import { useLocale } from '@/app/contexts/LocaleContext';
+import { getRoundConfig } from '@/app/constants/rounds';
 
 interface RoundDifficultySelectorProps {
   open: boolean;
@@ -11,6 +12,11 @@ interface RoundDifficultySelectorProps {
 
 export function RoundDifficultySelector({ open, onSelect, roundNumber }: RoundDifficultySelectorProps) {
   const { t } = useLocale();
+  const config = getRoundConfig(roundNumber);
+  
+  // Fallback if config failed (shouldn't happen)
+  const safe = config.safe;
+  const risky = config.risky;
 
   return (
     <Dialog open={open}>
@@ -39,9 +45,10 @@ export function RoundDifficultySelector({ open, onSelect, roundNumber }: RoundDi
               {t.safe || "SAFE"}
             </div>
             <ul className="text-[10px] sm:text-xs text-stone-300 space-y-1">
-              <li>🔄 <span className="text-white">7 {t.spins || "SPINS"}</span></li>
+              <li>🔄 <span className="text-white">{safe.spins} {t.spins || "SPINS"}</span></li>
+              <li>💰 COST: <span className="text-yellow-400">{safe.cost}</span></li>
               <li>{t.easyGoal || "Easy to clear"}</li>
-              <li>{t.reward || "Reward"}: <span className="text-yellow-400">1 🎟️</span></li>
+              <li>{t.reward || "Reward"}: <span className="text-yellow-400">{safe.rewardTickets} 🎟️</span></li>
             </ul>
             <Button className="w-full mt-1 sm:mt-2 bg-green-600 hover:bg-green-500 text-[10px] sm:text-xs py-1 sm:py-2">
               {t.select || "SELECT"}
@@ -57,9 +64,10 @@ export function RoundDifficultySelector({ open, onSelect, roundNumber }: RoundDi
               {t.risky || "RISKY"}
             </div>
             <ul className="text-[10px] sm:text-xs text-stone-300 space-y-1">
-              <li>🔄 <span className="text-white">3 {t.spins || "SPINS"}</span></li>
+              <li>🔄 <span className="text-white">{risky.spins} {t.spins || "SPINS"}</span></li>
+              <li>💰 COST: <span className="text-yellow-400">{risky.cost}</span></li>
               <li>{t.hardGoal || "Hard to clear"}</li>
-              <li>{t.reward || "Reward"}: <span className="text-yellow-400">2 🎟️</span></li>
+              <li>{t.reward || "Reward"}: <span className="text-yellow-400">{risky.rewardTickets} 🎟️</span></li>
             </ul>
             <Button className="w-full mt-1 sm:mt-2 bg-red-600 hover:bg-red-500 text-[10px] sm:text-xs py-1 sm:py-2">
               {t.select || "SELECT"}

@@ -102,13 +102,9 @@ export function useSlotMachine() {
   // ===== ACTIONS =====
 
   const spin = async () => {
-    // Mercy Rule Check: If credits < cost, allow 1 free spin
-    const canAfford = state.credits >= SPIN_COST;
-    const isFreeSpin = state.bonusSpins > 0;
-    const isMercySpin = !canAfford && !state.mercyUsed && !isFreeSpin;
-
-    if (isSpinning || (!canAfford && !isFreeSpin && !isMercySpin)) {
-      if (!isSpinning && !canAfford) setToast('NO COINS! RESTART?');
+    // 4. Entry Fee Model: Spins are pre-paid
+    if (isSpinning || state.spinsLeft <= 0) {
+      if (!isSpinning && state.spinsLeft <= 0) setToast('NO SPINS LEFT!');
       return;
     }
 
@@ -117,24 +113,9 @@ export function useSlotMachine() {
     setWinningCells([]);
     setToast(null);
 
-    // Apply Cost
+    // Apply Cost (No per-spin cost in Entry Fee model)
     let newCredits = state.credits;
     let newBonusSpins = state.bonusSpins;
-    let newMercyUsed = state.mercyUsed;
-
-    if (isFreeSpin) {
-      newBonusSpins--;
-    } else if (isMercySpin) {
-      // Free spin provided by mercy
-      setToast('MERCY SPIN! (FREE)');
-      newMercyUsed = true;
-    } else {
-      // Normal spin
-      newCredits -= SPIN_COST;
-      // Reset mercy if we can afford again (logic: if we win this spin, we are back in game)
-      // Actually we set mercyUsed to false only when credits >= SPIN_COST?
-      // Let's reset it if newCredits >= SPIN_COST to handle edge cases, but mainly it resets on successful win
-    }
 
     // Decrease Spins Left (Deadline)
     const newSpinsLeft = Math.max(0, state.spinsLeft - 1);
@@ -143,7 +124,6 @@ export function useSlotMachine() {
       credits: newCredits,
       bonusSpins: newBonusSpins,
       spinsLeft: newSpinsLeft,
-      mercyUsed: newMercyUsed
     });
 
     // Check Game Over (if 0 spins left and not enough credits)
@@ -298,9 +278,10 @@ export function useSlotMachine() {
     if (newCredits >= 10000) unlockAchievement('rich');
 
     // Reset Mercy if we profited (simple check: if credits now >= cost)
-    if (state.mercyUsed && newCredits >= SPIN_COST) {
-      updateState({ mercyUsed: false });
-    }
+    // Removed legacy mercy logic
+    // if (state.mercyUsed && newCredits >= SPIN_COST) {
+    //   updateState({ mercyUsed: false });
+    // }
 
     setIsSpinning(false);
   };
@@ -486,22 +467,27 @@ export function useSlotMachine() {
 
   const startRound = (isRisky: boolean) => {
     const nextRoundNum = state.round > 0 ? state.round + 1 : 1;
-    const spins = isRisky ? 3 : 7;
-    const tickets = isRisky ? 2 : 1;
-
-    // Get Round Config but override spins
     const config = getRoundConfig(nextRoundNum);
+
+    // Determine Mode
+    const mode = isRisky ? config.risky : config.safe;
+
+    // Check Affordability
+    if (state.credits < mode.cost) {
+      playSound('error');
+      setToast('NOT ENOUGH COINS!');
+      return;
+    }
 
     updateState({
       round: nextRoundNum,
+      credits: state.credits - mode.cost, // Deduct Entry Fee
       currentGoal: config.goal,
-      spinsLeft: spins,
-      maxSpins: spins,
-      roundRewardTickets: tickets,
+      spinsLeft: mode.spins,
+      maxSpins: mode.spins,
+      roundRewardTickets: mode.rewardTickets, // Set rewards based on risk
       gameOver: false,
       showRoundSelector: false,
-      // If Round 1, reset credits to initial 100? No, carry over or standard init.
-      // But if we are calling this from INITIAL_GAME_STATE, we are fine.
     });
 
     playSound('start');

@@ -109,11 +109,17 @@ export interface GameState {
 }
 
 // ===== ROUND TYPES =====
+export interface RoundModeConfig {
+  spins: number;
+  cost: number;
+  rewardTickets: number;
+}
+
 export interface RoundConfig {
   round: number;
   goal: number;
-  maxSpins: number;
-  rewardTickets: number;
+  safe: RoundModeConfig;
+  risky: RoundModeConfig;
 }
 
 // ===== PHONE BONUS TYPES =====
