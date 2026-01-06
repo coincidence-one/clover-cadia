@@ -97,6 +97,15 @@ export interface Translations {
   outOfSpins: string;
   restart: string;
 
+  // Round Selector
+  chooseStrategy: string;
+  safe: string;
+  risky: string;
+  spins: string;
+  easyGoal: string;
+  hardGoal: string;
+  select: string;
+
   // Phone Bonus
   incomingCall: string;
   pickBonus: string;
@@ -234,6 +243,15 @@ export const en: Translations = {
   gameOver: 'GAME OVER',
   outOfSpins: 'OUT OF SPINS!',
   restart: 'RESTART GAME',
+
+  // Round Selector
+  chooseStrategy: 'Choose your strategy',
+  safe: 'SAFE',
+  risky: 'RISKY',
+  spins: 'SPINS',
+  easyGoal: 'Easy to clear',
+  hardGoal: 'Hard to clear',
+  select: 'SELECT',
 
   // Phone Bonus
   incomingCall: 'INCOMING CALL...',

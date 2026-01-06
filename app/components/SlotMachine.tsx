@@ -58,7 +58,7 @@ export default function SlotMachine() {
   };
 
   return (
-    <div className={`relative min-h-screen bg-stone-900 text-green-400 font-pixel p-4 flex flex-col items-center justify-center ${showCurse ? 'animate-pulse bg-red-900' : ''}`}>
+    <div className={`relative min-h-screen bg-stone-900 text-green-400 font-pixel p-4 pb-safe flex flex-col items-center justify-center ${showCurse ? 'animate-pulse bg-red-900' : ''}`}>
       {/* Scanlines Overlay */}
       <div className="pointer-events-none fixed inset-0 z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
 
@@ -150,9 +150,9 @@ export default function SlotMachine() {
       </div>
 
       {/* Header */}
-      <div className="text-center mb-6 animate-pulse">
-        <h1 className="text-3xl text-green-400 drop-shadow-[2px_2px_0_#000]">LUCKY CLOVER</h1>
-        <p className="text-xs text-yellow-400 tracking-widest">★ PIXEL SLOTS ★</p>
+      <div className="text-center mb-4 md:mb-6">
+        <h1 className="text-2xl md:text-3xl text-green-400 drop-shadow-[2px_2px_0_#000] truncate">{t.title}</h1>
+        <p className="text-[10px] md:text-xs text-yellow-400 tracking-widest truncate">{t.subtitle}</p>
       </div>
 
       {/* Round Info Bar */}
@@ -219,6 +219,9 @@ export default function SlotMachine() {
             {isSpinning ? '...' : state.bonusSpins > 0 ? `FREE SPIN (${state.bonusSpins})` : `SPIN (-${SPIN_COST})`}
          </Button>
       </div>
+
+      {/* Spacer for mobile bottom safe area */}
+      <div className="h-4 md:h-0" />
 
       {/* Toast Notification */}
       {toast && (

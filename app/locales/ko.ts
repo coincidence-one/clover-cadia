@@ -111,6 +111,15 @@ export const ko: Translations = {
   outOfSpins: '스핀 소진!',
   restart: '게임 재시작',
 
+  // Round Selector
+  chooseStrategy: '스핀 전략을 선택하세요',
+  safe: '안전',
+  risky: '위험',
+  spins: '스핀',
+  easyGoal: '목표 달성 쉬움',
+  hardGoal: '목표 달성 어려움',
+  select: '선택',
+
   // Phone Bonus
   incomingCall: '전화가 왔습니다...',
   pickBonus: '보너스를 선택하세요:',
