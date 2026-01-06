@@ -2,17 +2,39 @@ import type { GameSymbol } from '@/app/types';
 import { SYMBOLS, WILD_SYMBOL } from '@/app/constants';
 
 /**
+ * Normalize emoji string for consistent comparison
+ * Some emojis like 7️⃣ have variation selectors that can cause comparison issues
+ */
+export function normalizeEmoji(emoji: string): string {
+  return emoji.normalize('NFC');
+}
+
+/**
+ * Check if two symbols match (handles WILD card)
+ */
+export function symbolsMatch(a: string, b: string, wildIcon: string): boolean {
+  const normA = normalizeEmoji(a);
+  const normB = normalizeEmoji(b);
+  const normWild = normalizeEmoji(wildIcon);
+
+  // WILD matches anything
+  if (normA === normWild || normB === normWild) return true;
+
+  return normA === normB;
+}
+
+/**
  * Get a random symbol based on weighted probabilities
  * @param boostClover - If true, increases clover probability
  */
 export function getWeightedRandomSymbol(boostClover = false): GameSymbol {
-  const symbols = [...SYMBOLS];
+  const symbols = SYMBOLS.map(s => ({ ...s })); // Clone to avoid mutation
 
   // Boost clover probability if lucky charm active
   if (boostClover) {
     const cloverIdx = symbols.findIndex(s => s.id === 'clover');
     if (cloverIdx !== -1) {
-      symbols[cloverIdx] = { ...symbols[cloverIdx], probability: 0.25 };
+      symbols[cloverIdx].probability = 0.25;
     }
   }
 
@@ -56,36 +78,82 @@ export function addWildToGrid(grid: string[]): string[] {
 }
 
 /**
- * Count occurrences of a symbol in grid
+ * Count occurrences of a symbol in grid (normalized comparison)
  */
 export function countSymbol(grid: string[], symbolIcon: string): number {
-  return grid.filter(cell => cell === symbolIcon).length;
+  const normalizedTarget = normalizeEmoji(symbolIcon);
+  return grid.filter(cell => normalizeEmoji(cell) === normalizedTarget).length;
 }
 
 /**
  * Check if grid has 666 curse (3 or more 6s)
+ * Uses normalized comparison for reliable emoji matching
  */
 export function hasCurse(grid: string[]): boolean {
-  const sixCount = countSymbol(grid, '6️⃣');
+  const sixSymbol = SYMBOLS.find(s => s.id === 'six');
+  if (!sixSymbol) return false;
+
+  const sixCount = countSymbol(grid, sixSymbol.icon);
   return sixCount >= 3;
 }
 
 /**
- * Check payline for wins
+ * Check payline for wins - FIXED VERSION
+ * 
+ * Rules:
+ * 1. Matches must be CONSECUTIVE from the LEFT
+ * 2. WILD can substitute for any symbol
+ * 3. If first symbol is WILD, use the next non-WILD symbol as target
+ * 4. Need at least 3 consecutive matches for a win
  */
 export function checkPaylineWin(
   grid: string[],
   payline: number[]
 ): { matches: number; symbol: string; cells: number[] } | null {
-  const symbols = payline.map(idx => grid[idx]);
-  const firstSymbol = symbols[0];
+  if (payline.length < 3) return null;
 
-  // Count consecutive matches from start
-  let matches = 1;
-  for (let i = 1; i < symbols.length; i++) {
-    if (symbols[i] === firstSymbol || symbols[i] === WILD_SYMBOL.icon) {
+  const wildIcon = normalizeEmoji(WILD_SYMBOL.icon);
+  const symbols = payline.map(idx => {
+    if (idx < 0 || idx >= grid.length) {
+      console.error(`Invalid payline index: ${idx}`);
+      return '';
+    }
+    return normalizeEmoji(grid[idx]);
+  });
+
+  // Find the target symbol (first non-WILD symbol)
+  let targetSymbol = '';
+  for (const sym of symbols) {
+    if (sym !== wildIcon && sym !== '') {
+      targetSymbol = sym;
+      break;
+    }
+  }
+
+  // If all symbols are WILD (or empty), that's a win with WILDs
+  if (targetSymbol === '') {
+    // All WILDs - count them as match
+    const wildCount = symbols.filter(s => s === wildIcon).length;
+    if (wildCount >= 3) {
+      return {
+        matches: wildCount,
+        symbol: WILD_SYMBOL.icon,
+        cells: payline.slice(0, wildCount),
+      };
+    }
+    return null;
+  }
+
+  // Count consecutive matches from the LEFT
+  let matches = 0;
+  for (let i = 0; i < symbols.length; i++) {
+    const sym = symbols[i];
+
+    // Symbol matches if it equals target OR is WILD
+    if (sym === targetSymbol || sym === wildIcon) {
       matches++;
     } else {
+      // Chain broken - stop counting
       break;
     }
   }
@@ -94,10 +162,28 @@ export function checkPaylineWin(
   if (matches >= 3) {
     return {
       matches,
-      symbol: firstSymbol,
+      symbol: targetSymbol,
       cells: payline.slice(0, matches),
     };
   }
 
   return null;
+}
+
+/**
+ * Debug helper: Log grid state
+ */
+export function debugGrid(grid: string[]): void {
+  console.log('Grid State:');
+  console.log(`  ${grid.slice(0, 5).join(' ')}`);
+  console.log(`  ${grid.slice(5, 10).join(' ')}`);
+  console.log(`  ${grid.slice(10, 15).join(' ')}`);
+}
+
+/**
+ * Debug helper: Log payline check result
+ */
+export function debugPayline(grid: string[], payline: number[], result: ReturnType<typeof checkPaylineWin>): void {
+  const symbols = payline.map(idx => grid[idx]);
+  console.log(`Payline [${payline.join(',')}]: ${symbols.join(' ')} => ${result ? `WIN! ${result.matches}x ${result.symbol}` : 'No win'}`);
 }
