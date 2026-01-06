@@ -172,18 +172,25 @@ export function hasCurse(grid: string[]): boolean {
   return sixCount >= 3;
 }
 
-export function checkPaylineWin(
+/**
+ * Check if a pattern is fully matched (CloverPit Style)
+ * ALL cells in the pattern must contain the SAME symbol (or WILD substitutes)
+ * Returns the matched symbol and all pattern cells if successful
+ */
+export function checkPatternWin(
   grid: string[],
-  payline: number[]
-): { matches: number; symbol: string; cells: number[] } | null {
-  if (payline.length < 3) return null;
+  patternCells: number[],
+  patternIndex: number
+): { symbol: string; cells: number[]; patternIndex: number } | null {
+  if (patternCells.length < 3) return null;
 
   const wildIcon = normalizeEmoji(WILD_SYMBOL.icon);
-  const symbols = payline.map(idx => {
+  const symbols = patternCells.map(idx => {
     if (idx < 0 || idx >= grid.length) return '';
     return normalizeEmoji(grid[idx]);
   });
 
+  // Find the first non-wild symbol to use as target
   let targetSymbol = '';
   for (const sym of symbols) {
     if (sym !== wildIcon && sym !== '') {
@@ -192,35 +199,48 @@ export function checkPaylineWin(
     }
   }
 
+  // If all wilds, count as wild match
   if (targetSymbol === '') {
-    const wildCount = symbols.filter(s => s === wildIcon).length;
-    if (wildCount >= 3) {
+    const allWilds = symbols.every(s => s === wildIcon || s === '');
+    if (allWilds && symbols.filter(s => s === wildIcon).length >= 3) {
       return {
-        matches: wildCount,
         symbol: WILD_SYMBOL.icon,
-        cells: payline.slice(0, wildCount),
+        cells: [...patternCells],
+        patternIndex,
       };
     }
     return null;
   }
 
-  let matches = 0;
-  for (let i = 0; i < symbols.length; i++) {
-    const sym = symbols[i];
-    if (sym === targetSymbol || sym === wildIcon) {
-      matches++;
-    } else {
-      break;
-    }
-  }
+  // Check if ALL cells match the target or are wild
+  const allMatch = symbols.every(sym => sym === targetSymbol || sym === wildIcon);
 
-  if (matches >= 3) {
+  if (allMatch) {
     return {
-      matches,
       symbol: targetSymbol,
-      cells: payline.slice(0, matches),
+      cells: [...patternCells],
+      patternIndex,
     };
   }
 
+  return null;
+}
+
+/**
+ * Legacy function for backward compatibility
+ * Now wraps checkPatternWin behavior
+ */
+export function checkPaylineWin(
+  grid: string[],
+  payline: number[]
+): { matches: number; symbol: string; cells: number[] } | null {
+  const result = checkPatternWin(grid, payline, 0);
+  if (result) {
+    return {
+      matches: payline.length, // All cells matched
+      symbol: result.symbol,
+      cells: result.cells,
+    };
+  }
   return null;
 }

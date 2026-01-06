@@ -9,6 +9,7 @@ import type { GameState } from '@/app/types';
 import {
   SYMBOLS,
   PAYLINES,
+  PATTERNS,
   ITEMS,
   TICKET_ITEMS,
   ACHIEVEMENTS,
@@ -33,6 +34,7 @@ import {
   getInitialGrid,
   addWildToGrid,
   hasCurse,
+  checkPatternWin,
   checkPaylineWin,
 } from '@/app/utils/gameHelpers';
 
@@ -175,29 +177,77 @@ export function useSlotMachine() {
       }
     }
 
-    // Calculate wins - CloverPit style (no bet multiplier)
+    // Calculate wins - CloverPit Pattern Style with Priority/Exclusion
     let totalWin = 0;
     const allWinningCells: number[] = [];
 
-    for (const payline of PAYLINES) {
-      const win = checkPaylineWin(newGrid, payline);
+    // Step 1: Collect ALL matched patterns
+    interface MatchedPattern {
+      pattern: typeof PATTERNS[0];
+      patternIdx: number;
+      symbol: string;
+      symbolObj: typeof SYMBOLS[0];
+    }
+    const matchedPatterns: MatchedPattern[] = [];
+
+    PATTERNS.forEach((pattern, patternIdx) => {
+      const win = checkPatternWin(newGrid, pattern.cells, patternIdx);
       if (win) {
         const symbol = SYMBOLS.find(s => s.icon === win.symbol);
         if (symbol && symbol.value > 0) {
-          // Win = symbol value × (matches - 2) multiplier
-          // 3 matches = 1x, 4 matches = 2x, 5 matches = 3x
-          const matchMultiplier = win.matches - 2;
-          let lineWin = symbol.value * matchMultiplier * 10; // Base 10x for visibility
-
-          // Apply Glass Cannon Risk (All wins x1.5)
-          if (state.activeBonuses.includes('risk_glass_cannon')) {
-            lineWin = Math.floor(lineWin * 1.5);
-          }
-
-          totalWin += lineWin;
-          allWinningCells.push(...win.cells);
+          matchedPatterns.push({
+            pattern,
+            patternIdx,
+            symbol: win.symbol,
+            symbolObj: symbol,
+          });
         }
       }
+    });
+
+    // Step 2: Build exclusion set from matched patterns
+    const excludedIds = new Set<string>();
+    matchedPatterns.forEach(mp => {
+      mp.pattern.excludes.forEach(excludeId => excludedIds.add(excludeId));
+    });
+
+    // Step 3: Calculate wins for non-excluded patterns
+    // Separate jackpot for special handling
+    let jackpotMatch: MatchedPattern | null = null;
+
+    matchedPatterns.forEach(mp => {
+      // If this pattern is excluded by a higher one, skip it
+      if (excludedIds.has(mp.pattern.id)) {
+        return;
+      }
+
+      // Handle jackpot separately (it adds on top of everything)
+      if (mp.pattern.isJackpot) {
+        jackpotMatch = mp;
+        return;
+      }
+
+      // Win = symbol value × pattern multiplier × base (10)
+      let patternWin = mp.symbolObj.value * mp.pattern.multiplier * 10;
+
+      // Apply Glass Cannon Risk (All wins x1.5)
+      if (state.activeBonuses.includes('risk_glass_cannon')) {
+        patternWin = Math.floor(patternWin * 1.5);
+      }
+
+      totalWin += patternWin;
+      allWinningCells.push(...mp.pattern.cells);
+    });
+
+    // Step 4: Add jackpot bonus AFTER all other patterns
+    if (jackpotMatch !== null) {
+      const jp = jackpotMatch as MatchedPattern;
+      let jackpotWin = jp.symbolObj.value * jp.pattern.multiplier * 10;
+      if (state.activeBonuses.includes('risk_glass_cannon')) {
+        jackpotWin = Math.floor(jackpotWin * 1.5);
+      }
+      totalWin += jackpotWin;
+      allWinningCells.push(...jp.pattern.cells);
     }
 
     // Apply double star effect

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SYMBOLS, PAYLINES, PAYLINE_NAMES } from '@/app/constants';
+import { SYMBOLS, PATTERNS } from '@/app/constants';
 import { useLocale } from '@/app/contexts/LocaleContext';
 import { Badge } from '@/components/ui/8bit/badge';
 import { Button } from '@/components/ui/8bit/button';
@@ -86,7 +86,7 @@ export const PatternsPanel = () => {
   const { t } = useLocale();
   const [page, setPage] = useState(0);
   const ITEMS_PER_PAGE = 5;
-  const totalPages = Math.ceil(PAYLINES.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(PATTERNS.length / ITEMS_PER_PAGE);
   
   // Create mini grid visualizer
   const renderMiniGrid = (pattern: number[]) => (
@@ -100,51 +100,31 @@ export const PatternsPanel = () => {
     </div>
   );
 
-  const currentPaylines = PAYLINES.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
+  const currentPatterns = PATTERNS.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
   const startIdx = page * ITEMS_PER_PAGE;
 
   return (
-    <div className="bg-stone-900/90 border-2 border-stone-600 p-2 w-52 text-stone-200">
+    <div className="bg-stone-900/90 border-2 border-stone-600 p-2 w-56 text-stone-200">
       <h3 className="text-center text-green-400 border-b-2 border-green-600 pb-1 mb-2">{t.patterns}</h3>
       
-      {/* Match Multipliers */}
-      <div className="mb-3 bg-black/50 p-2 rounded border border-stone-700">
-        <div className="text-[10px] text-center mb-1 text-stone-400">{t.multiplier}</div>
-        <div className="flex justify-between text-xs">
-          <div className="flex flex-col items-center">
-            <span className="text-stone-300">{t.match3}</span>
-            <span className="text-yellow-400 font-bold">1x</span>
-          </div>
-          <div className="flex flex-col items-center border-l border-stone-700 pl-2">
-            <span className="text-stone-300">{t.match4}</span>
-            <span className="text-yellow-400 font-bold">2x</span>
-          </div>
-          <div className="flex flex-col items-center border-l border-stone-700 pl-2">
-            <span className="text-stone-300">{t.match5}</span>
-            <span className="text-yellow-400 font-bold">3x</span>
-          </div>
-        </div>
-        <div className="text-[8px] text-stone-500 text-center mt-1">
-          (Base Value × Multiplier)
-        </div>
-      </div>
-      
-      {/* Clarification Note */}
+      {/* Clarification Note - CloverPit Style */}
       <div className="text-[9px] text-yellow-400 text-center mb-2 bg-yellow-900/30 p-1 rounded border border-yellow-600/50">
-        ⚠️ 왼쪽부터 3개 이상 연속 일치 시 당첨!
+        ⚠️ 패턴 전체가 동일 무늬로 일치 시 당첨!<br/>
+        (All cells must match same symbol)
       </div>
 
-      {/* Paginated Patterns */}
+      {/* Paginated Patterns with Multipliers */}
       <div className="space-y-2">
-        {currentPaylines.map((pattern, idx) => {
+        {currentPatterns.map((pattern, idx) => {
           const globalIdx = startIdx + idx;
           return (
             <div key={globalIdx} className="flex items-center justify-between border-b border-stone-800 pb-1">
               <div className="flex flex-col">
-                <span className="text-[10px] text-green-400 font-bold">LINE {globalIdx + 1}</span>
-                <span className="text-[8px] text-stone-500">{PAYLINE_NAMES[globalIdx] || ''}</span>
+                <span className="text-[10px] text-green-400 font-bold">{pattern.nameKo}</span>
+                <span className="text-[8px] text-stone-500">{pattern.name}</span>
               </div>
-              {renderMiniGrid(pattern)}
+              {renderMiniGrid(pattern.cells)}
+              <span className="text-yellow-400 font-bold text-xs">×{pattern.multiplier}</span>
             </div>
           );
         })}

@@ -12,55 +12,157 @@ import type { Payline } from '@/app/types';
  *   |  10  |  11  |  12  |  13  |  14  |  Row 2 (Bottom)
  *   +------+------+------+------+------+
  * 
- * Each payline is an array of 5 cell indices, read LEFT to RIGHT.
- * Wins are counted as consecutive matches from the LEFT side.
+ * Pattern Priority Rules (CloverPit):
+ * - Patterns trigger in order (top to bottom in list)
+ * - Higher tier patterns EXCLUDE lower tier patterns from counting
+ * - Jackpot is special: all patterns trigger FIRST, then Jackpot adds on top
  */
 
-export const PAYLINES: Payline[] = [
-  // === HORIZONTAL LINES (3 lines) ===
-  [5, 6, 7, 8, 9],         // 1. 가로 중앙 (Center Horizontal)
-  [0, 1, 2, 3, 4],         // 2. 가로 상단 (Top Horizontal)
-  [10, 11, 12, 13, 14],    // 3. 가로 하단 (Bottom Horizontal)
+export interface Pattern {
+  id: string;           // Unique identifier
+  name: string;
+  nameKo: string;
+  cells: number[];
+  multiplier: number;
+  excludes: string[];   // IDs of patterns this one suppresses
+  isJackpot?: boolean;  // Special handling for jackpot
+}
 
-  // === V-SHAPE / Λ-SHAPE (2 lines) ===
-  [0, 6, 12, 8, 4],        // 4. V자 (V-shape down then up)
-  [10, 6, 2, 8, 14],       // 5. 역V자 (Inverted V, up then down)
+export const PATTERNS: Pattern[] = [
+  // === 기본 패턴 (Basic) - Index 0~3 ===
+  {
+    id: 'horizontal',
+    name: 'Horizontal',
+    nameKo: '가로',
+    cells: [5, 6, 7, 8, 9], // Middle row
+    multiplier: 1.0,
+    excludes: [],
+  },
+  {
+    id: 'vertical',
+    name: 'Vertical',
+    nameKo: '세로',
+    cells: [2, 7, 12], // Center column
+    multiplier: 1.0,
+    excludes: [],
+  },
+  {
+    id: 'diagonal_down',
+    name: 'Diagonal',
+    nameKo: '대각',
+    cells: [0, 6, 12], // Diagonal ↘
+    multiplier: 1.0,
+    excludes: [],
+  },
+  {
+    id: 'diagonal_up',
+    name: 'Diagonal',
+    nameKo: '대각',
+    cells: [10, 6, 2], // Diagonal ↗
+    multiplier: 1.0,
+    excludes: [],
+  },
 
-  // === ZIG-ZAG PATTERNS (4 lines) ===
-  [5, 1, 2, 3, 9],         // 6. 지그 상단 (Zig top)
-  [5, 11, 12, 13, 9],      // 7. 재그 하단 (Zag bottom)
-  [0, 1, 7, 3, 4],         // 8. M자 (M-shape, top corners with center dip)
-  [10, 11, 7, 13, 14],     // 9. W자 (W-shape, bottom corners with center rise)
+  // === 확장 패턴 (Extended) - Index 4~5 ===
+  {
+    id: 'horizontal_l',
+    name: 'Horizontal-L',
+    nameKo: '가로-L',
+    cells: [6, 7, 8, 9, 12, 13, 14], // L-shape
+    multiplier: 2.0,
+    excludes: ['horizontal'], // 가로 미발동
+  },
+  {
+    id: 'horizontal_xl',
+    name: 'Horizontal-XL',
+    nameKo: '가로-XL',
+    cells: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], // Top + Middle rows
+    multiplier: 3.0,
+    excludes: ['horizontal', 'horizontal_l'], // 가로, 가로-L 미발동
+  },
 
-  // === SHALLOW V PATTERNS (2 lines) ===
-  [0, 6, 7, 8, 4],         // 10. 얕은 V (Shallow V)
-  [10, 6, 7, 8, 14],       // 11. 얕은 역V (Shallow Inverted V)
+  // === 지그재그 패턴 (Zig-Zag) - Index 6~7 ===
+  {
+    id: 'zig',
+    name: 'Zig',
+    nameKo: '지그',
+    cells: [0, 6, 2, 8, 4], // Zig-zag pattern
+    multiplier: 4.0,
+    excludes: ['diagonal_down', 'diagonal_up'], // 대각 미발동
+  },
+  {
+    id: 'zag',
+    name: 'Zag',
+    nameKo: '재그',
+    cells: [10, 6, 12, 8, 14], // Reverse zig-zag
+    multiplier: 4.0,
+    excludes: ['diagonal_down', 'diagonal_up'], // 대각 미발동
+  },
 
-  // === DIAGONAL PATTERNS (2 lines) ===
-  [0, 1, 7, 13, 14],       // 12. 대각선 하강 (Diagonal Descending)
-  [10, 11, 7, 3, 4],       // 13. 대각선 상승 (Diagonal Ascending)
+  // === 특수 패턴 (Special) - Index 8~10 ===
+  {
+    id: 'ground',
+    name: 'Ground',
+    nameKo: '지상',
+    cells: [5, 6, 7, 10, 11, 12, 13, 14], // Middle + Bottom rows partial
+    multiplier: 7.0,
+    excludes: ['zig', 'horizontal_xl'], // 지그, 가로-XL 미발동
+  },
+  {
+    id: 'sky',
+    name: 'Sky',
+    nameKo: '천상',
+    cells: [0, 1, 2, 3, 4, 5, 6, 8, 9], // Top row + Middle partial
+    multiplier: 7.0,
+    excludes: ['zag', 'horizontal_xl'], // 재그, 가로-XL 미발동
+  },
+  {
+    id: 'eyes',
+    name: 'Eyes',
+    nameKo: '눈',
+    cells: [1, 3, 5, 6, 7, 8, 9, 11, 13], // Eye pattern
+    multiplier: 8.0,
+    excludes: ['vertical'], // 세로 패턴 미발동 (columns 2, 4)
+  },
+
+  // === 잭팟 (Jackpot) - Index 11 ===
+  {
+    id: 'jackpot',
+    name: 'Jackpot',
+    nameKo: '잭팟',
+    cells: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], // All 15 cells
+    multiplier: 10.0,
+    excludes: [], // Jackpot doesn't suppress - it ADDS to all others
+    isJackpot: true,
+  },
 ];
 
-// Named patterns for display (Korean + English)
-export const PAYLINE_NAMES = [
-  '가로 중앙',      // 1
-  '가로 상단',      // 2
-  '가로 하단',      // 3
-  'V자',            // 4
-  '역V자',          // 5
-  '지그 상단',      // 6
-  '재그 하단',      // 7
-  'M자',            // 8
-  'W자',            // 9
-  '얕은 V',         // 10
-  '얕은 역V',       // 11
-  '대각선 하강',    // 12
-  '대각선 상승',    // 13
-];
+// Legacy PAYLINES for backward compatibility
+export const PAYLINES: Payline[] = PATTERNS.map(p => p.cells as Payline);
 
-export const GRID_SIZE = 15; // 5 columns × 3 rows
+// Pattern names for display
+export const PAYLINE_NAMES = PATTERNS.map(p => p.nameKo);
+
+// Pattern multipliers
+export const PATTERN_MULTIPLIERS = PATTERNS.map(p => p.multiplier);
+
+export const GRID_SIZE = 15;
 export const GRID_COLS = 5;
 export const GRID_ROWS = 3;
+
+/**
+ * Get pattern by ID
+ */
+export function getPatternById(id: string): Pattern | undefined {
+  return PATTERNS.find(p => p.id === id);
+}
+
+/**
+ * Get pattern by index
+ */
+export function getPattern(index: number): Pattern | undefined {
+  return PATTERNS[index];
+}
 
 /**
  * Helper to get row and column from cell index
