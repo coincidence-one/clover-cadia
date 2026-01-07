@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/8bit/dialog';
 import { Button } from '@/components/ui/8bit/button';
 import { TALISMANS, type Talisman, type TalismanRarity } from '@/app/constants/talismans';
-import { useLocale } from '@/app/contexts/LocaleContext';
 
 interface TalismanShopProps {
   tickets: number;

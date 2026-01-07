@@ -31,9 +31,48 @@ import { useTalismanSystem } from './game/useTalismanSystem';
 // Re-export constants for component usage
 export { SYMBOLS, PAYLINES, ITEMS, TICKET_ITEMS, ACHIEVEMENTS, LEVELS, ITEM_KEYS, TICKET_ITEM_KEYS, SPIN_COST };
 
-export function useSlotMachine() {
+interface UseSlotMachineProps {
+  initialState?: GameState;
+  unlockedIds?: string[];
+}
+
+interface RoundConfig {
+  spins: number;
+  cost: number;
+  rewardTickets: number;
+}
+
+export function useSlotMachine({ initialState, unlockedIds = [] }: UseSlotMachineProps = {}) {
   // ===== CORE STATE =====
-  const [state, setState] = useState<GameState>(INITIAL_GAME_STATE);
+  const [state, setState] = useState<GameState>(() => {
+    if (initialState) return initialState;
+
+    // Server-side safe check
+    if (typeof window === 'undefined') return INITIAL_GAME_STATE;
+
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return INITIAL_GAME_STATE;
+
+    try {
+      const parsed = JSON.parse(saved);
+      // Migration Logic
+      if (!parsed.shopTalismans || parsed.shopTalismans.length === 0) {
+        parsed.shopTalismans = refreshTalismanShop(3, parsed.ownedTalismans || [], unlockedIds);
+        parsed.talismanSlots = parsed.talismanSlots || 7;
+        parsed.shopRerollCost = parsed.shopRerollCost || 10;
+      }
+      if (parsed.bankDeposit === undefined) parsed.bankDeposit = 0;
+
+      if (typeof parsed.spinsLeft !== 'number' || isNaN(parsed.spinsLeft)) {
+        parsed.spinsLeft = 0;
+      }
+
+      return { ...INITIAL_GAME_STATE, ...parsed };
+    } catch (e) {
+      console.error('Save load failed', e);
+      return INITIAL_GAME_STATE;
+    }
+  });
   const [toast, setToast] = useState<string | null>(null);
   const [message, setMessage] = useState('PRESS SPIN!');
 
@@ -46,11 +85,7 @@ export function useSlotMachine() {
 
   // Helper: Update State & Persist
   const updateState = useCallback((updates: Partial<GameState>) => {
-    setState(prev => {
-      const newState = { ...prev, ...updates };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-      return newState;
-    });
+    setState(prev => ({ ...prev, ...updates }));
   }, []);
 
   // Helper: Audio
@@ -58,30 +93,10 @@ export function useSlotMachine() {
     audioEngine.play(type);
   }, []);
 
-  // ===== LOAD GAME =====
+  // Save effect
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Migration Logic
-        if (!parsed.shopTalismans || parsed.shopTalismans.length === 0) {
-          parsed.shopTalismans = refreshTalismanShop(3, parsed.ownedTalismans || []);
-          parsed.talismanSlots = parsed.talismanSlots || 7;
-          parsed.shopRerollCost = parsed.shopRerollCost || 10;
-        }
-        if (!parsed.bankDeposit) parsed.bankDeposit = 0;
-        if (!parsed.currentGoal) {
-          const roundCfg = { spins: 25, cost: 0, rewardTickets: 1, multiplier: 1.5 }; // Default fallback
-          parsed.currentGoal = 1000;
-        }
-
-        setState(prev => ({ ...prev, ...parsed }));
-      } catch (e) {
-        console.error('Save load failed', e);
-      }
-    }
-  }, []);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, [state]);
 
 
   // ===== SUB-SYSTEMS =====
@@ -143,7 +158,7 @@ export function useSlotMachine() {
       const choice = state.currentPhoneChoices.find(c => c.id === id);
       if (!choice) return;
 
-      let newOwned = [...state.ownedTalismans];
+      const newOwned = [...state.ownedTalismans];
       let newSlots = state.talismanSlots;
 
       if (choice.type === 'talisman') {
@@ -165,14 +180,32 @@ export function useSlotMachine() {
       });
       playSound('genie');
     },
-    startRound: (config: any) => { // config: { spins, cost, rewardTickets }
+    startRound: (config: RoundConfig) => {
+      // Calculate new debt based on difficulty or previous progression
+      // For now, mapping round number to approximate debt curve
+      // Previous logic: Math.floor(state.currentGoal * 1.5)
+      // New logic: Base 100 * Round * 1.5? 
+      // Let's keep it simple: Current Debt increases by 50% each round
+      const newDebt = Math.floor((state.currentDebt || 100) * 1.5);
+
       updateState({
         maxSpins: config.spins,
         spinsLeft: config.spins, // Refill
-        currentGoal: Math.floor(state.currentGoal * 1.5), // Increase Goal!
-        // Wait, RoundSelector passes specific Goal?
-        // Currently generic logic:
-        showRoundSelector: false
+        currentDebt: newDebt,
+        paidAmount: 0, // Reset paid amount
+        currentTurn: 0,
+        deadlineTurn: 3, // Each round reset days? UseRoundSystem manages Days.
+        // But startRound usually implies NEW round. 
+        // With Debt system, do we reset days?
+        // "Recurring debt by a deadline".
+        // Let's assume deadlineTurn is how many "Days" or "Spins" available?
+        // We are using "Days". 
+        currentDay: 1, // Reset to Day 1
+        earlyPaymentBonus: 0,
+
+        showRoundSelector: false,
+        // currentGoal is deprecated for Debt system but kept for compatibility if needed
+        currentGoal: newDebt
         // Use config...
       });
       // Actually RoundDifficultySelector calls onSelect(config).

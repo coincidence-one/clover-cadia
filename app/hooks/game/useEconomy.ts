@@ -1,12 +1,13 @@
 import { useCallback } from 'react';
 import { GameState } from '@/app/types';
 import { ITEMS, TICKET_ITEMS } from '@/app/constants';
+import { SoundType } from '@/app/utils/audio';
 
 interface UseEconomyProps {
   state: GameState;
   isSpinning: boolean;
   updateState: (updates: Partial<GameState>) => void;
-  playSound: (type: any) => void;
+  playSound: (type: SoundType) => void;
   setToast: (msg: string | null) => void;
 }
 
@@ -24,7 +25,7 @@ export const useGameEconomy = ({
 
     const newItems = { ...state.items, [itemName]: state.items[itemName] - 1 };
     const newEffects = { ...state.activeEffects };
-    let newBonus = state.bonusSpins;
+    const newBonus = state.bonusSpins;
 
     // Item Effects Logic
     switch (itemName) {
@@ -122,37 +123,47 @@ export const useGameEconomy = ({
   }, [state, isSpinning, updateState, playSound, setToast]);
 
 
-  // ===== ATM SYSTEM =====
-  const depositToBank = useCallback((amount: number) => {
+  // ===== DEBT/PAYMENT SYSTEM =====
+  const makePayment = useCallback((amount: number) => {
     if (amount <= 0 || amount > state.credits) {
       playSound('error');
       return;
     }
 
+    const remainingDebt = state.currentDebt - state.paidAmount;
+    const actualPayment = Math.min(amount, remainingDebt);
+    const turnsLeft = state.deadlineTurn - state.currentTurn;
+
+    // Calculate early payment bonus (1 coin per remaining turn per 10 coins paid)
+    let bonus = 0;
+    if (turnsLeft > 0 && actualPayment > 0) {
+      bonus = Math.floor((actualPayment / 10) * turnsLeft);
+    }
+
+    const newPaidAmount = state.paidAmount + actualPayment;
+    const newCredits = state.credits - actualPayment + bonus;
+    const newEarlyPaymentBonus = state.earlyPaymentBonus + bonus;
+
     updateState({
-      credits: state.credits - amount,
-      bankDeposit: state.bankDeposit + amount,
+      credits: newCredits,
+      paidAmount: newPaidAmount,
+      earlyPaymentBonus: newEarlyPaymentBonus,
     });
 
     playSound('coin');
-    setToast(`🏧 ${amount} 코인 입금 완료!`);
-    setTimeout(() => setToast(null), 2000);
-  }, [state, updateState, playSound, setToast]);
 
-  const withdrawFromBank = useCallback((amount: number) => {
-    if (amount <= 0 || amount > state.bankDeposit) {
-      playSound('error');
-      return;
+    if (bonus > 0) {
+      setToast(`💳 ${actualPayment} 납부! 선납 보너스 +${bonus}🍀`);
+    } else {
+      setToast(`💳 ${actualPayment} 납부 완료!`);
     }
 
-    updateState({
-      credits: state.credits + amount,
-      bankDeposit: state.bankDeposit - amount,
-    });
+    // Check if debt is fully paid
+    if (newPaidAmount >= state.currentDebt) {
+      setToast('🎉 납부 완료! 다음 라운드로!');
+    }
 
-    playSound('buy');
-    setToast(`🏧 ${amount} 코인 출금 완료!`);
-    setTimeout(() => setToast(null), 2000);
+    setTimeout(() => setToast(null), 2500);
   }, [state, updateState, playSound, setToast]);
 
   return {
@@ -160,7 +171,6 @@ export const useGameEconomy = ({
     buyItem,
     buyTicketItem,
     useTicketItem,
-    depositToBank,
-    withdrawFromBank
+    makePayment,
   };
 };

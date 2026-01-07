@@ -3,6 +3,7 @@ import { Press_Start_2P } from "next/font/google";
 import "./globals.css";
 import "@/components/ui/8bit/styles/retro.css";
 import { LocaleProvider } from "@/app/contexts/LocaleContext";
+import { AuthProvider } from "@/app/contexts/AuthContext";
 
 const pressStart2P = Press_Start_2P({
   weight: "400",
@@ -39,11 +40,14 @@ export default function RootLayout({
       <body
         className={`${pressStart2P.variable} antialiased`}
       >
-        <LocaleProvider>
-          {children}
-        </LocaleProvider>
+        <AuthProvider>
+          <LocaleProvider>
+            {children}
+          </LocaleProvider>
+        </AuthProvider>
       </body>
     </html>
   );
 }
+
 

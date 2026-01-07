@@ -80,10 +80,12 @@ export const INITIAL_GAME_STATE: GameState = {
     dynamoChance: 0,
   },
 
-  // ATM System
-  bankDeposit: 0,
-  interestRate: 0.1, // 10% interest
-  totalInterestEarned: 0,
+  // Debt/Payment System
+  currentDebt: 0, // Set by round
+  paidAmount: 0,
+  deadlineTurn: 0,
+  currentTurn: 0,
+  earlyPaymentBonus: 0,
 };
 
 // Storage key

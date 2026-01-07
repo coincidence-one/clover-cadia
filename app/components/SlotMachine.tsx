@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useSlotMachine, ACHIEVEMENTS, LEVELS, PAYLINES } from '@/app/hooks/useSlotMachine';
+import { useSlotMachine, ACHIEVEMENTS, LEVELS, PAYLINES, SYMBOLS } from '@/app/hooks/useSlotMachine';
+import { getRoundConfig } from '@/app/constants/rounds';
 import { useLocale } from '@/app/contexts/LocaleContext';
 import { Button } from '@/components/ui/8bit/button';
 import { Badge } from '@/components/ui/8bit/badge';
@@ -16,18 +17,19 @@ import { SymbolsPanel, PatternsPanel, PaytableModal } from '@/app/components/slo
 import { RoundDifficultySelector } from '@/app/components/slot-machine/RoundDifficultySelector';
 import { GameGuideModal } from '@/app/components/slot-machine/GameGuideModal';
 import { TalismanShop } from '@/app/components/slot-machine/TalismanShop';
-import { ATM } from './slot-machine/ATM';
+import { PaymentCenter } from './slot-machine/PaymentCenter';
 import { CrystalBall } from './slot-machine/CrystalBall';
 import { Confetti } from './slot-machine/Confetti';
+import { UserMenu } from './auth/UserMenu';
+import { useUnlockedItems } from '@/app/hooks/useUnlockedItems';
 
 export default function SlotMachine() {
-  const { state, isSpinning, reelSpinning, message, grid, winningCells, showLevelUp, setShowLevelUp, showCurse, toast, actions } = useSlotMachine();
+  const { unlockedItems } = useUnlockedItems();
+  const { state, isSpinning, reelSpinning, message, grid, winningCells, showLevelUp, setShowLevelUp, showCurse, toast, actions } = useSlotMachine({ unlockedIds: unlockedItems });
   const { t, toggleLocale } = useLocale();
   const [showGuide, setShowGuide] = React.useState(false);
-  const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setMounted(true);
     // basic audio init handled in hook
     
     // Auto-show guide on first load
@@ -44,11 +46,7 @@ export default function SlotMachine() {
     ? ((state.xp - currentLevel.xp) / (nextLevel.xp - currentLevel.xp)) * 100 
     : 100;
 
-  // Get translated item
-  const getItemTranslation = (key: string) => {
-    const itemKey = key as keyof typeof t.items;
-    return t.items[itemKey] || { name: key, desc: '' };
-  };
+
 
   // Get translated achievement
   const getAchievementTranslation = (id: string) => {
@@ -56,10 +54,19 @@ export default function SlotMachine() {
     return t.achievements[achKey] || { name: id, desc: '' };
   };
 
+  const handleStartRound = (isRisky: boolean) => {
+    const config = getRoundConfig(state.round === 0 ? 1 : state.round);
+    actions.startRound(isRisky ? config.risky : config.safe);
+  };
+
+
   return (
-    <div className={`relative min-h-screen bg-stone-900 text-green-400 font-pixel p-4 pb-safe flex flex-col items-center justify-center overflow-x-hidden w-full ${showCurse ? 'animate-pulse bg-red-900' : ''} ${winningCells.length > 0 ? 'animate-shake' : ''}`}>
+    <div className={`relative min-h-screen bg-stone-900 text-green-400 font-pixel p-4 pb-safe flex flex-col items-center justify-center overflow-x-hidden w-full ${showCurse ? 'animate-pulse bg-red-900' : ''}`}>
       {/* Scanlines Overlay - z-0 to be background level but above bg color */}
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] crt-flicker" />
+      
+      {/* Vignette Overlay */}
+      <div className="pointer-events-none fixed inset-0 z-10 vignette" />
 
       {/* VFX: Confetti */}
 
@@ -80,6 +87,9 @@ export default function SlotMachine() {
         
         {/* Buttons Group - Scrollable on mobile */}
         <div className="flex gap-1 md:gap-2 overflow-x-auto no-scrollbar pb-1 max-w-[200px] md:max-w-none items-center">
+           {/* User Menu (Login/Profile) */}
+           <UserMenu />
+
            <Button
             variant="outline"
             size="sm"
@@ -121,15 +131,15 @@ export default function SlotMachine() {
             onReroll={actions.rerollTalismanShop}
           />
 
-          {/* ATM */}
-          <ATM
+          {/* Payment Center */}
+          <PaymentCenter
             credits={state.credits}
-            bankDeposit={state.bankDeposit}
-            currentGoal={state.currentGoal}
-            interestRate={state.interestRate}
-            totalInterestEarned={state.totalInterestEarned}
-            onDeposit={actions.depositToBank}
-            onWithdraw={actions.withdrawFromBank}
+            currentDebt={state.currentDebt}
+            paidAmount={state.paidAmount}
+            deadlineTurn={state.deadlineTurn}
+            currentTurn={state.currentTurn}
+            earlyPaymentBonus={state.earlyPaymentBonus}
+            onPayment={actions.makePayment}
           />
 
           {/* Achievements Dialog */}
@@ -199,7 +209,12 @@ export default function SlotMachine() {
       </div>
 
       {/* 5x3 Slot Grid (CloverPit Style) */}
-      <div className={`relative bg-stone-800 p-3 border-4 border-white mb-4 ${showCurse ? 'border-red-500 shadow-[0_0_30px_rgba(255,0,0,0.5)]' : winningCells.length > 0 ? 'animate-pulse border-yellow-400' : ''}`}>
+      <div className={`relative bg-stone-800 p-3 border-4 border-white mb-4 ${showCurse ? 'border-red-500 shadow-[0_0_30px_rgba(255,0,0,0.5)]' : winningCells.length > 0 ? (
+        state.lastWin >= state.bet * 10 ? 'win-tier-jackpot' : 
+        state.lastWin >= state.bet * 5 ? 'win-tier-3' : 
+        state.lastWin >= state.bet * 2 ? 'win-tier-2' : 
+        'win-tier-1'
+      ) : ''}`}>
         {/* Payline indicator */}
         <div className="absolute -left-6 top-0 bottom-0 flex flex-col justify-around text-[8px] text-stone-500">
              {PAYLINES.map((_, i) => <div key={i}>►</div>)}
@@ -237,21 +252,25 @@ export default function SlotMachine() {
                    <div className="absolute inset-0 overflow-hidden bg-stone-900 z-20 rounded-md">
                       <div className="flex flex-col items-center animate-scroll">
                          {/* Strip A */}
-                         {['🍒','🍋','🔔','💎','💰','7️⃣'].map((s, i) => (
-                           <div key={`a-${i}`} className="h-12 md:h-16 w-full flex items-center justify-center text-3xl md:text-4xl">{s}</div>
+                         {SYMBOLS.map((s, idx) => (
+                           <div key={`a-${idx}`} className="h-12 md:h-16 w-full flex items-center justify-center p-2">
+                             <img src={s.icon} alt={s.id} className="w-full h-full object-contain" />
+                           </div>
                          ))}
                          {/* Strip B (Loop) */}
-                         {['🍒','🍋','🔔','💎','💰','7️⃣'].map((s, i) => (
-                           <div key={`b-${i}`} className="h-12 md:h-16 w-full flex items-center justify-center text-3xl md:text-4xl">{s}</div>
+                         {SYMBOLS.map((s, idx) => (
+                           <div key={`b-${idx}`} className="h-12 md:h-16 w-full flex items-center justify-center p-2">
+                             <img src={s.icon} alt={s.id} className="w-full h-full object-contain" />
+                           </div>
                          ))}
                       </div>
                    </div>
                 )}
                 
                 {/* Actual Symbol (Hidden or Blurred when spinning) */}
-                <span className={isColSpinning ? 'opacity-0' : 'opacity-100 scale-100 transition-transform duration-200'}>
-                   {cell}
-                </span>
+                <div className={isColSpinning ? 'opacity-0' : 'opacity-100 scale-100 transition-transform duration-200 w-full h-full p-2 flex items-center justify-center'}>
+                   <img src={cell} alt="symbol" className="w-full h-full object-contain" />
+                </div>
               </div>
             );
           })}
@@ -276,7 +295,7 @@ export default function SlotMachine() {
              <div className="flex-1 bg-black border-2 border-stone-600 p-2 text-center">
                 <div className="text-[10px] text-stone-400">{t.spins || "SPINS LEFT"}</div>
                 <div className={`text-xl ${state.spinsLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-green-400'}`}>
-                  {state.spinsLeft}
+                  {(typeof state.spinsLeft !== 'number' || isNaN(state.spinsLeft)) ? 0 : state.spinsLeft}
                 </div>
             </div>
          </div>
@@ -317,12 +336,22 @@ export default function SlotMachine() {
           </div>
       )}
 
+      {/* BIG WIN OVERLAY */}
+      {state.lastWin >= state.bet * 10 && !isSpinning && (
+        <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-500">
+          <div className="text-center animate-big-win">
+            <h2 className="text-6xl md:text-8xl font-pixel mb-4 drop-shadow-[4px_4px_0_#000]">BIG WIN!</h2>
+            <div className="text-4xl md:text-6xl text-yellow-400">+{state.lastWin}</div>
+          </div>
+        </div>
+      )}
+
       {/* Separated Modals */}
       <PhoneCallModal state={state} onSelect={actions.selectPhoneBonus} />
       
       <RoundDifficultySelector 
         open={state.showRoundSelector} 
-        onSelect={actions.startRound} 
+        onSelect={handleStartRound} 
         roundNumber={state.round === 0 ? 1 : (state.showRoundSelector && state.round > 0 ? (state.credits >= state.currentGoal ? state.round + 1 : state.round) : state.round)} 
         currentDay={state.currentDay}
         maxDays={state.maxDays}

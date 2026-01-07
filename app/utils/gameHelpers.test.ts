@@ -7,10 +7,9 @@ import {
   checkPaylineWin,
   hasCurse,
   normalizeEmoji,
-  symbolsMatch,
-  countSymbol
+  symbolsMatch
 } from './gameHelpers';
-import { SYMBOLS, WILD_SYMBOL } from '../constants';
+import { SYMBOLS } from '../constants';
 import { PAYLINES } from '../constants/paylines';
 
 // Test helper

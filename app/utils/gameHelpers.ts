@@ -138,11 +138,17 @@ export function getWeightedRandomSymbol(
  * Generate boolean checks helpers
  */
 export function getInitialGrid(): string[] {
-  return [
-    '🍒', '🍋', '☘️', '🔔', '💎',
-    '🍋', '☘️', '🔔', '💎', '💰',
-    '☘️', '🔔', '💎', '💰', '7️⃣',
+  // Map simple IDs to actual icons
+  const initialLayout = [
+    'cherry', 'lemon', 'clover', 'bell', 'diamond',
+    'lemon', 'clover', 'bell', 'diamond', 'treasure',
+    'clover', 'bell', 'diamond', 'treasure', 'seven',
   ];
+
+  return initialLayout.map(id => {
+    const sym = SYMBOLS.find(s => s.id === id);
+    return sym ? sym.icon : '';
+  });
 }
 
 export function generateRandomGrid(
@@ -248,22 +254,25 @@ export function checkPaylineWin(
 /**
  * Generate a randomized list of talismans for the shop
  * Rarity Weights: Common (50%), Uncommon (30%), Rare (15%), Legendary (5%)
+ * @param count - Number of talismans to show
+ * @param ownedIds - Already owned talisman IDs (excluded from shop)
+ * @param unlockedIds - Talismans unlocked in Soul Shop (if empty, show all)
  */
-export function refreshTalismanShop(count: number = 3, ownedIds: string[] = []): string[] {
-  const allTalismans = Object.values(TALISMANS);
+export function refreshTalismanShop(
+  count: number = 3,
+  ownedIds: string[] = [],
+  unlockedIds: string[] = []
+): string[] {
+  let allTalismans = Object.values(TALISMANS);
 
-  // Weights
-  const weights: Record<TalismanRarity, number> = {
-    common: 50,
-    uncommon: 30,
-    rare: 15,
-    legendary: 5,
-  };
+  // If unlockedIds is provided and not empty, filter to only show unlocked talismans
+  if (unlockedIds.length > 0) {
+    allTalismans = allTalismans.filter(t => unlockedIds.includes(t.id));
+  }
 
   const selected: string[] = [];
 
-  // Filter out already owned? (Depending on if duplicates are allowed. CloverPit logic usually unique usually)
-  // Let's assume unique ownership for now as per our system
+  // Filter out already owned
   const available = allTalismans.filter(t => !ownedIds.includes(t.id));
 
   for (let i = 0; i < count; i++) {
@@ -277,7 +286,7 @@ export function refreshTalismanShop(count: number = 3, ownedIds: string[] = []):
     // Find candidates of this rarity
     let candidates = available.filter(t => t.rarity === targetRarity && !selected.includes(t.id));
 
-    // Fallback if no candidates of rarity (e.g., all legendary owned)
+    // Fallback if no candidates of rarity
     if (candidates.length === 0) {
       candidates = available.filter(t => !selected.includes(t.id));
     }
@@ -290,3 +299,4 @@ export function refreshTalismanShop(count: number = 3, ownedIds: string[] = []):
 
   return selected;
 }
+

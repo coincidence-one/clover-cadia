@@ -31,7 +31,6 @@ const getRarity = (id: string, t: Translations) => {
 
 const SymbolRow = ({ symbol, t, probability }: { symbol: GameSymbol, t: Translations, probability?: ProbabilityData }) => {
   const rarity = getRarity(symbol.id, t);
-  const basePayout = symbol.value > 0 ? symbol.value * 10 : 0;
   
   // Probability Display
   const probDisplay = probability ? (
@@ -45,17 +44,22 @@ const SymbolRow = ({ symbol, t, probability }: { symbol: GameSymbol, t: Translat
   return (
     <div className="flex items-center justify-between border-b border-stone-700 py-1 text-xs">
       <div className="flex items-center gap-2">
-        <span className="text-xl">{symbol.icon}</span>
+        <div className="w-8 h-8 flex items-center justify-center">
+          <img src={symbol.icon} alt={symbol.id} className="w-full h-full object-contain" />
+        </div>
         <div className="flex flex-col">
           <span className={rarity.color + " uppercase font-bold text-[10px]"}>{rarity.label}</span>
           {probDisplay}
         </div>
       </div>
-      <div className="text-right">
-        <div className="text-yellow-400 font-bold">
-          {symbol.value > 0 ? `×${symbol.value}` : (symbol.id === 'six' ? <span className="text-red-500">저주</span> : '???')}
+        <div className="text-yellow-400 font-bold text-right">
+          {symbol.value > 0 ? (
+            <div className="flex flex-col items-end">
+               <span className="text-[10px] text-stone-400 font-normal">Base: {symbol.value}</span>
+               <span>×{symbol.value}</span>
+            </div>
+          ) : (symbol.id === 'six' ? <span className="text-red-500">저주/CURSE</span> : '???')}
         </div>
-      </div>
     </div>
   );
 };

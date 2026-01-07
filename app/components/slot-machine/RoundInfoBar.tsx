@@ -6,6 +6,9 @@ interface RoundInfoBarProps {
 }
 
 export function RoundInfoBar({ state }: RoundInfoBarProps) {
+  const remainingDebt = state.currentDebt - state.paidAmount;
+  const isDebtPaid = remainingDebt <= 0 && state.currentDebt > 0;
+  
   return (
     <div className="w-full max-w-lg flex gap-2 mb-4">
         {/* Round & Day Info */}
@@ -14,11 +17,11 @@ export function RoundInfoBar({ state }: RoundInfoBarProps) {
             <div className="text-xl text-white">DAY {state.currentDay}/{state.maxDays}</div>
         </div>
 
-        {/* Goal Progress - Updated to ATM Deposit */}
-        <div className={`flex-1 border-2 p-2 text-center ${state.bankDeposit >= state.currentGoal ? 'bg-green-900 border-green-400 animate-pulse' : 'bg-black border-white'}`}>
-            <div className="text-[10px] text-gray-400">ATM GOAL</div>
-            <div className={`text-xl ${state.bankDeposit >= state.currentGoal ? 'text-green-400' : 'text-white'}`}>
-                {state.bankDeposit} / {state.currentGoal}
+        {/* Debt Progress */}
+        <div className={`flex-1 border-2 p-2 text-center ${isDebtPaid ? 'bg-green-900 border-green-400 animate-pulse' : 'bg-black border-white'}`}>
+            <div className="text-[10px] text-gray-400">💳 PAYMENT</div>
+            <div className={`text-xl ${isDebtPaid ? 'text-green-400' : 'text-white'}`}>
+                {state.paidAmount} / {state.currentDebt || '?'}
             </div>
         </div>
 
@@ -26,9 +29,10 @@ export function RoundInfoBar({ state }: RoundInfoBarProps) {
         <div className={`flex-1 border-2 p-2 text-center ${state.spinsLeft <= 3 ? 'bg-red-900 border-red-500 animate-pulse' : 'bg-black border-white'}`}>
             <div className="text-[10px] text-gray-400">SPINS LEFT</div>
             <div className={`text-xl ${state.spinsLeft <= 3 ? 'text-red-500' : 'text-white'}`}>
-                {state.spinsLeft}/{state.maxSpins}
+                {typeof state.spinsLeft === 'number' && !isNaN(state.spinsLeft) ? state.spinsLeft : 0}/{state.maxSpins}
             </div>
         </div>
     </div>
   );
 }
+
