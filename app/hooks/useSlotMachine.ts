@@ -67,6 +67,12 @@ export function useSlotMachine({ initialState, unlockedIds = [] }: UseSlotMachin
         parsed.spinsLeft = 0;
       }
 
+      // Ensure round 1 starts with debt
+      if (parsed.round === 1 && !parsed.currentDebt) {
+        parsed.currentDebt = 100;
+        parsed.currentGoal = 100;
+      }
+
       return { ...INITIAL_GAME_STATE, ...parsed };
     } catch (e) {
       console.error('Save load failed', e);

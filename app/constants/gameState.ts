@@ -42,8 +42,8 @@ export const INITIAL_GAME_STATE: GameState = {
   activeTicketEffects: {},
 
   // Deadline System
-  round: 0,
-  currentGoal: 0,
+  round: 1,
+  currentGoal: 100, // Sync with currentDebt for legacy compatibility
   spinsLeft: 0,
   maxSpins: 0,
   gameOver: false,
@@ -81,7 +81,7 @@ export const INITIAL_GAME_STATE: GameState = {
   },
 
   // Debt/Payment System
-  currentDebt: 0, // Set by round
+  currentDebt: 100, // Set by round (starts at 100 for Round 1)
   paidAmount: 0,
   deadlineTurn: 0,
   currentTurn: 0,

@@ -58,7 +58,7 @@ const SymbolRow = ({ symbol, t, probability }: { symbol: GameSymbol, t: Translat
                <span className="text-[10px] text-stone-400 font-normal">Base: {symbol.value}</span>
                <span>×{symbol.value}</span>
             </div>
-          ) : (symbol.id === 'six' ? <span className="text-red-500">저주/CURSE</span> : '???')}
+          ) : (symbol.id === 'six' ? <span className="text-red-500 text-[9px] tracking-tighter">저주/CURSE</span> : '???')}
         </div>
     </div>
   );
