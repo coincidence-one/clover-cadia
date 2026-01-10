@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, nickname: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, nickname: string) => Promise<{ data?: any; error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, nickname: string) => {
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -67,22 +67,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (signUpError) throw signUpError;
 
-      return { error: null };
+      return { data, error: null };
     } catch (error) {
-      return { error: error as Error };
+      return { data: null, error: error as Error };
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('[DEBUG] signIn called with email:', email);
+      console.log('[DEBUG] password length:', password.length);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      console.log('[DEBUG] signIn response:', { data, error });
+      
+      if (error) {
+        console.error('[DEBUG] signIn error details:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+        });
+        throw error;
+      }
       return { error: null };
     } catch (error) {
+      console.error('[DEBUG] signIn catch block:', error);
       return { error: error as Error };
     }
   };

@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setIsSubmitting(true);
 
     try {
@@ -34,8 +36,15 @@ export default function LoginPage() {
         if (!nickname.trim()) {
           throw new Error('닉네임을 입력해주세요.');
         }
-        const { error } = await signUp(email, password, nickname);
+        const { data, error } = await signUp(email, password, nickname);
         if (error) throw error;
+
+        // Check for email confirmation requirement
+        if (data && data.user && !data.session) {
+          setSuccessMessage('회원가입이 완료되었습니다! 이메일을 확인하여 계정을 인증해주세요.');
+          setIsLoginMode(true);
+          return; // Stop here, don't throw error
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
@@ -122,6 +131,9 @@ export default function LoginPage() {
             {error && (
               <p className="text-red-400 text-xs text-center">{error}</p>
             )}
+            {successMessage && (
+              <p className="text-green-400 text-xs text-center">{successMessage}</p>
+            )}
 
             <button
               type="submit"
@@ -142,6 +154,7 @@ export default function LoginPage() {
               onClick={() => {
                 setIsLoginMode(!isLoginMode);
                 setError('');
+                setSuccessMessage('');
               }}
               className="text-xs text-gray-400 hover:text-green-400 transition-colors"
             >
