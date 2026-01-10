@@ -133,10 +133,12 @@ export interface GameState {
     dynamoChance: number; // Respin chance on win (다이나모)
   };
 
-  // ATM System (Bank)
-  bankDeposit: number; // Coins deposited in ATM
-  interestRate: number; // Interest rate (0.1 = 10%)
-  totalInterestEarned: number; // Total interest earned this game
+  // Debt/Payment System (Replaces ATM)
+  currentDebt: number; // Amount to pay by deadline
+  paidAmount: number; // Amount already paid towards debt
+  deadlineTurn: number; // Turn number when debt is due
+  currentTurn: number; // Current turn in the round
+  earlyPaymentBonus: number; // Bonus coins for early payment
 }
 
 // ===== ROUND TYPES =====

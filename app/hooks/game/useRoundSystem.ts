@@ -2,11 +2,12 @@ import { useCallback } from 'react';
 import { GameState } from '@/app/types';
 import { LEVELS, ACHIEVEMENTS, DAILY_REWARDS } from '@/app/constants';
 import { generatePhoneChoices } from '@/app/constants';
+import { SoundType } from '@/app/utils/audio';
 
 interface UseRoundProps {
   state: GameState;
   updateState: (updates: Partial<GameState>) => void;
-  playSound: (type: any) => void;
+  playSound: (type: SoundType) => void;
   setToast: (msg: string | null) => void;
   setMessage: (msg: string) => void;
   setIsSpinning: (v: boolean) => void;
@@ -20,7 +21,6 @@ export const useRoundSystem = ({
   playSound,
   setToast,
   setMessage,
-  setIsSpinning,
   setShowLevelUp,
   setShowDailyBonus,
 }: UseRoundProps) => {
@@ -74,8 +74,8 @@ export const useRoundSystem = ({
   }, [state, updateState, playSound]);
 
   const nextRound = useCallback(() => {
-    if (state.credits < state.currentGoal && state.bankDeposit < state.currentGoal) {
-      // Fallback check (should ideally check bankDeposit)
+    if (state.credits < state.currentGoal) {
+      // Fallback check
       // But logic is usually handled by endDay
     }
 
@@ -89,7 +89,7 @@ export const useRoundSystem = ({
     }
 
     // Trigger Phone Call for next round selection
-    const choices = generatePhoneChoices(state.round, false);
+    const choices = generatePhoneChoices();
 
     updateState({
       tickets: newTickets,
@@ -113,12 +113,10 @@ export const useRoundSystem = ({
 
     // 2. Check if Final Day
     if (state.currentDay >= state.maxDays) {
-      // LAST DAY: Check ATM Deposit vs Goal
-      if (state.bankDeposit >= state.currentGoal) {
+      // LAST DAY: Check Debt Payment vs Goal
+      if (state.paidAmount >= state.currentDebt) {
         // SUCCESS: Next Round logic (Trigger nextRound setup via modal?)
-        // Actually, we usually trigger Phone Call directly here?
-        // Or wait for user to click "Next"?
-        // Current logic in useSlotMachine was to Setup Phone Call immediately.
+        // actually useSlotMachine handles phone call setup
 
         // Use logic from nextRound but integrated
         const ticketsEarned = state.roundRewardTickets;
@@ -128,7 +126,7 @@ export const useRoundSystem = ({
           setToast(`🎟️ +${ticketsEarned} 티켓 획득!`);
         }
 
-        const choices = generatePhoneChoices(state.round, false);
+        const choices = generatePhoneChoices();
         updateState({
           tickets: newTickets,
           showPhoneModal: true,
@@ -140,7 +138,7 @@ export const useRoundSystem = ({
         // FAIL: Game Over
         updateState({ gameOver: true });
         playSound('lose');
-        setMessage('☠️ 납기일 초과! 추락했습니다 ☠️'); // Floor opens
+        setMessage('☠️ 부채 미상환! 파산했습니다 ☠️'); // Floor opens
       }
     } else {
       // NOT LAST DAY: Proceed to Next Day
@@ -149,13 +147,8 @@ export const useRoundSystem = ({
       if (state.ownedTalismans.includes('grandma_wallet')) bonusCredits += 30;
       if (state.ownedTalismans.includes('fake_coin')) bonusCredits += 10;
 
-      // Bank Interest
-      const interest = Math.floor(state.bankDeposit * state.interestRate);
-      const newDeposit = state.bankDeposit + interest;
-
       updateState({
         credits: state.credits + bonusCredits,
-        bankDeposit: newDeposit,
         currentDay: state.currentDay + 1,
         showRoundSelector: true, // Let them pick Difficulty for NEXT Day
         spinsLeft: 0,
@@ -163,7 +156,7 @@ export const useRoundSystem = ({
       });
       playSound('levelup');
       setMessage(`DAY ${state.currentDay} COMPLETE!`);
-      if (interest > 0) setToast(`💰 이자 +${interest} 코인 (ATM)`);
+      if (bonusCredits > 0) setToast(`💰 데일리 보너스 +${bonusCredits}`);
       setTimeout(() => setToast(null), 3000);
     }
   }, [state, updateState, playSound, setMessage, setToast]);

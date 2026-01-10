@@ -4,6 +4,7 @@ import {
   SYMBOLS,
   PATTERNS,
 } from '@/app/constants';
+import { SoundType } from '@/app/utils/audio';
 import {
   getWeightedRandomSymbol,
   getInitialGrid,
@@ -15,7 +16,7 @@ import {
 interface UseSpinProps {
   state: GameState;
   updateState: (updates: Partial<GameState>) => void;
-  playSound: (type: any) => void;
+  playSound: (type: SoundType) => void;
   setToast: (msg: string | null) => void;
   addXP: (amount: number) => void;
   unlockAchievement: (id: string) => void;
@@ -64,7 +65,8 @@ export const useSpinLogic = ({
     playSound('spin');
 
     // Decrease Spins Left if not free
-    const newSpinsLeft = isFreeRespin ? state.spinsLeft : Math.max(0, state.spinsLeft - 1);
+    const currentSpins = typeof state.spinsLeft === 'number' && !isNaN(state.spinsLeft) ? state.spinsLeft : 0;
+    const newSpinsLeft = isFreeRespin ? currentSpins : Math.max(0, currentSpins - 1);
 
     // Generate new grid logic
     const generateSymbol = () => getWeightedRandomSymbol(state.activeBonuses, state.activeTicketEffects);

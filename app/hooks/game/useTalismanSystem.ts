@@ -2,12 +2,14 @@ import { useCallback } from 'react';
 import { GameState } from '@/app/types';
 import { TALISMANS as TALISMANS_CONST } from '@/app/constants/talismans';
 import { refreshTalismanShop } from '@/app/utils/gameHelpers';
+import { SoundType } from '@/app/utils/audio';
 
 interface UseTalismanProps {
   state: GameState;
   updateState: (updates: Partial<GameState>) => void;
-  playSound: (type: any) => void;
+  playSound: (type: SoundType) => void;
   setToast: (msg: string | null) => void;
+  unlockedIds?: string[];
 }
 
 export const useTalismanSystem = ({
@@ -15,6 +17,7 @@ export const useTalismanSystem = ({
   updateState,
   playSound,
   setToast,
+  unlockedIds = [],
 }: UseTalismanProps) => {
 
   const purchaseTalisman = useCallback((talismanId: string) => {
@@ -113,7 +116,7 @@ export const useTalismanSystem = ({
       return;
     }
 
-    const newShop = refreshTalismanShop(3, state.ownedTalismans);
+    const newShop = refreshTalismanShop(3, state.ownedTalismans, unlockedIds);
     updateState({
       credits: state.credits - cost,
       shopTalismans: newShop
@@ -122,7 +125,7 @@ export const useTalismanSystem = ({
     playSound('coin');
     setToast('🔄 상점 목록 갱신!');
     setTimeout(() => setToast(null), 2000);
-  }, [state, updateState, playSound, setToast]);
+  }, [state, updateState, playSound, setToast, unlockedIds]);
 
   return {
     purchaseTalisman,
