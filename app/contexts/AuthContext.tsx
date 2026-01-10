@@ -55,24 +55,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, nickname: string) => {
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            nickname, // 이 데이터가 트리거에서 사용됨
+          },
+        },
       });
 
       if (signUpError) throw signUpError;
-
-      // Create profile
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            nickname,
-          });
-
-        if (profileError) throw profileError;
-      }
 
       return { error: null };
     } catch (error) {
