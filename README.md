@@ -1,13 +1,13 @@
 # 🎰 PIXEL BET
 
-> **A Retro Roguelite Slot Survival Game**h Roguelite Elements**  
+> **A Retro Roguelite Slot Survival Game**  
 > *Spin, Survive, and Beat the Deadline!*
 
 ![Banner Placeholder](https://via.placeholder.com/800x400.png?text=CloverCadia+v2.0)
 
 ## 🎮 Introduction
 **CloverCadia** is a unique blend of **Classic Slots** and **Roguelite Mechanics**.  
-Unlike traditional slots, you are fightning against a **DEADLINE**.  
+Unlike traditional slots, you are fighting against a **DEADLINE**.  
 Earn enough coins before your spins run out to advance to the next round, get ticket rewards, and receive mysterious phone calls...
 
 ## ✨ Key Features (v2.0)
@@ -34,11 +34,14 @@ Earn enough coins before your spins run out to advance to the next round, get ti
 - **Symbol Values:** Wins are calculated by `Symbol Value x Match Multiplier`.
 
 ## 🛠️ Tech Stack
-- **Framework:** Next.js 14 + React
+- **Framework:** Next.js 16 + React 19
 - **Language:** TypeScript
-- **Styling:** Tailwind CSS (Pixel Art Aesthetic)
+- **Styling:** Tailwind CSS v4 (Pixel Art Aesthetic)
+- **UI Components:** Radix UI, Lucide React
+- **Backend:** Supabase
 - **State Management:** Custom React Hooks
 - **Audio:** Web Audio API (Chiptune Sounds)
+- **Utils:** Sonner (Toast), clsx, tailwind-merge
 
 ## 🚀 How to Run
 ```bash
