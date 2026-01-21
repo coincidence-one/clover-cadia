@@ -11,3 +11,6 @@ This PR introduces a basic dark mode toggle to the application.
 ## Verification
 1. Click the moon icon in the header.
 2. Verify that the background turns dark and text turns light.
+
+## Resolved Issues
+- Fixes #123 (Dark mode flickering on initial load)
