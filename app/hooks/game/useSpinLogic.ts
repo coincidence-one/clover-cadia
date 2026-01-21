@@ -153,15 +153,22 @@ export const useSpinLogic = ({
       patternIdx: number;
       symbol: string;
       symbolObj: typeof SYMBOLS[0];
+      matchCount: number;
     }
     const matchedPatterns: MatchedPattern[] = [];
 
     PATTERNS.forEach((pattern, patternIdx) => {
-      const win = checkPatternWin(newGrid, pattern.cells, patternIdx);
+      const win = checkPatternWin(newGrid, pattern.cells, patternIdx, pattern.allowPartial);
       if (win) {
         const symbol = SYMBOLS.find(s => s.icon === win.symbol);
         if (symbol && symbol.value > 0) {
-          matchedPatterns.push({ pattern, patternIdx, symbol: win.symbol, symbolObj: symbol });
+          matchedPatterns.push({
+            pattern,
+            patternIdx,
+            symbol: win.symbol,
+            symbolObj: symbol,
+            matchCount: win.matchCount
+          });
         }
       }
     });
@@ -176,7 +183,16 @@ export const useSpinLogic = ({
       if (mp.pattern.isJackpot) { jackpotMatch = mp; return; }
 
       const symbolBoost = state.talismanEffects.symbolValueBoosts[mp.symbolObj.id] || 0;
-      let patternWin = (mp.symbolObj.value + symbolBoost) * mp.pattern.multiplier * 10;
+
+      // Calculate match multiplier (Partial Match System)
+      let matchMultiplier = 1.0;
+      if (mp.pattern.allowPartial) {
+        if (mp.matchCount === 3) matchMultiplier = 0.2;
+        else if (mp.matchCount === 4) matchMultiplier = 0.5;
+        // 5 is 1.0
+      }
+
+      let patternWin = (mp.symbolObj.value + symbolBoost) * mp.pattern.multiplier * matchMultiplier * 10;
 
       if (state.activeBonuses.includes('risk_glass_cannon')) patternWin = Math.floor(patternWin * 1.5);
       totalWin += patternWin;

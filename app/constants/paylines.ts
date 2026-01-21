@@ -26,6 +26,7 @@ export interface Pattern {
   multiplier: number;
   excludes: string[];   // IDs of patterns this one suppresses
   isJackpot?: boolean;  // Special handling for jackpot
+  allowPartial?: boolean; // Allow partial matches (3, 4 of 5)
 }
 
 export const PATTERNS: Pattern[] = [
@@ -37,6 +38,7 @@ export const PATTERNS: Pattern[] = [
     cells: [5, 6, 7, 8, 9], // Middle row
     multiplier: 1.0,
     excludes: [],
+    allowPartial: true,
   },
   {
     id: 'vertical',
@@ -45,6 +47,7 @@ export const PATTERNS: Pattern[] = [
     cells: [2, 7, 12], // Center column
     multiplier: 1.0,
     excludes: [],
+    allowPartial: true,
   },
   {
     id: 'diagonal_down',
@@ -53,6 +56,7 @@ export const PATTERNS: Pattern[] = [
     cells: [0, 6, 12], // Diagonal ↘
     multiplier: 1.0,
     excludes: [],
+    allowPartial: true,
   },
   {
     id: 'diagonal_up',
@@ -61,6 +65,7 @@ export const PATTERNS: Pattern[] = [
     cells: [10, 6, 2], // Diagonal ↗
     multiplier: 1.0,
     excludes: [],
+    allowPartial: true,
   },
 
   // === 확장 패턴 (Extended) - Index 4~5 ===

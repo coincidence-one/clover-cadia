@@ -187,17 +187,21 @@ export function hasCurse(grid: string[]): boolean {
 export function checkPatternWin(
   grid: string[],
   patternCells: number[],
-  patternIndex: number
-): { symbol: string; cells: number[]; patternIndex: number } | null {
+  patternIndex: number,
+  allowPartial: boolean = false
+): { symbol: string; cells: number[]; patternIndex: number; matchCount: number } | null {
   if (patternCells.length < 3) return null;
 
   const wildIcon = normalizeEmoji(WILD_SYMBOL.icon);
+
+  // Get symbols in pattern order
   const symbols = patternCells.map(idx => {
     if (idx < 0 || idx >= grid.length) return '';
     return normalizeEmoji(grid[idx]);
   });
 
-  // Find the first non-wild symbol to use as target
+  // 1. Determine Target Symbol
+  // Use the first non-wild symbol as our target
   let targetSymbol = '';
   for (const sym of symbols) {
     if (sym !== wildIcon && sym !== '') {
@@ -206,28 +210,49 @@ export function checkPatternWin(
     }
   }
 
-  // If all wilds, count as wild match
+  // If completely empty or all wilds (rare/impossible usually)
+  // If all wilds, we treat WILD as the target
   if (targetSymbol === '') {
-    const allWilds = symbols.every(s => s === wildIcon || s === '');
-    if (allWilds && symbols.filter(s => s === wildIcon).length >= 3) {
-      return {
-        symbol: WILD_SYMBOL.icon,
-        cells: [...patternCells],
-        patternIndex,
-      };
+    // If we have at least 3 valid symbols (wilds)
+    if (symbols.slice(0, 3).every(s => s === wildIcon)) {
+      targetSymbol = WILD_SYMBOL.icon;
+    } else {
+      return null;
     }
-    return null;
   }
 
-  // Check if ALL cells match the target or are wild
-  const allMatch = symbols.every(sym => sym === targetSymbol || sym === wildIcon);
+  // 2. Check Matches
+  if (allowPartial) {
+    // Left-to-Right consecutive matching
+    let matchCount = 0;
+    for (const sym of symbols) {
+      if (sym === targetSymbol || sym === wildIcon) {
+        matchCount++;
+      } else {
+        break; // Stop at first mismatch
+      }
+    }
 
-  if (allMatch) {
-    return {
-      symbol: targetSymbol,
-      cells: [...patternCells],
-      patternIndex,
-    };
+    if (matchCount >= 3) {
+      return {
+        symbol: targetSymbol,
+        cells: patternCells.slice(0, matchCount),
+        patternIndex,
+        matchCount,
+      };
+    }
+
+  } else {
+    // Strict Full Match (All cells must match)
+    const allMatch = symbols.every(sym => sym === targetSymbol || sym === wildIcon);
+    if (allMatch) {
+      return {
+        symbol: targetSymbol,
+        cells: [...patternCells],
+        patternIndex,
+        matchCount: patternCells.length,
+      };
+    }
   }
 
   return null;
@@ -241,10 +266,11 @@ export function checkPaylineWin(
   grid: string[],
   payline: number[]
 ): { matches: number; symbol: string; cells: number[] } | null {
-  const result = checkPatternWin(grid, payline, 0);
+  // Legacy support implies linear check, so we allow partials
+  const result = checkPatternWin(grid, payline, 0, true);
   if (result) {
     return {
-      matches: payline.length, // All cells matched
+      matches: result.matchCount,
       symbol: result.symbol,
       cells: result.cells,
     };
